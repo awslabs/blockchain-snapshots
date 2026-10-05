@@ -2,9 +2,9 @@
 
 // State: every catalog entry, flattened + tagged with the region it came from.
 let ALL = [];
-// Regions we operate + their catalog endpoints (per-env, generated at deploy).
-// Includes regions whose catalog isn't deployed yet (catalogUrl === null) — they
-// still show up, marked "pending", so the page reflects the full operated set.
+// Regions with a deployed catalog endpoint (per-env, generated at deploy). Any
+// entry without a catalogUrl is dropped on load, so the page only ever lists
+// regions that can actually serve snapshots.
 let REGIONS = [];
 
 const $ = (id) => document.getElementById(id);
@@ -34,21 +34,23 @@ function fmtBytes(n) {
   return `${n.toFixed(i ? 1 : 0)} ${u[i]}`;
 }
 
+function plural(n, word) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
 // Load the per-environment catalog endpoints (generated at deploy by
 // build-endpoints.sh; gitignored so env-specific URLs are never committed).
 async function loadRegions() {
   const res = await fetch('./catalog-endpoints.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`catalog-endpoints.json HTTP ${res.status} — run build-endpoints.sh first`);
   const doc = await res.json();
-  return (doc.regions || []).filter((r) => r.code);
+  return (doc.regions || []).filter((r) => r.code && r.catalogUrl);
 }
 
-// Fetch every DEPLOYED region's catalog.json in parallel; tolerate failures.
-// Regions with no catalogUrl are "pending" — surfaced separately, not fetched.
+// Fetch every region's catalog.json in parallel; tolerate failures.
 async function loadCatalogs() {
-  const deployed = REGIONS.filter((r) => r.catalogUrl);
   const settled = await Promise.allSettled(
-    deployed.map(async (r) => {
+    REGIONS.map(async (r) => {
       // Timeout so one black-holing endpoint can't hold the whole page at
       // "Loading…" (init awaits allSettled before rendering anything).
       const res = await fetch(r.catalogUrl, { mode: 'cors', signal: AbortSignal.timeout(10000) });
@@ -68,13 +70,11 @@ async function loadCatalogs() {
   const failures = [];
   settled.forEach((r, i) => {
     if (r.status === 'fulfilled') rows.push(...r.value);
-    else failures.push(`${deployed[i].code} (${r.reason.message})`);
+    else failures.push(`${REGIONS[i].code} (${r.reason.message})`);
   });
 
-  const pending = REGIONS.filter((r) => !r.catalogUrl).map((r) => r.code);
-  // Numerator = regions that actually returned data, not merely attempted.
-  const parts = [`Loaded ${rows.length} snapshots from ${deployed.length - failures.length}/${REGIONS.length} region(s).`];
-  if (pending.length) parts.push(`Pending (not yet deployed): ${pending.join(', ')}.`);
+  // Count regions that actually returned data, not merely attempted.
+  const parts = [`Loaded ${plural(rows.length, 'snapshot')} from ${plural(REGIONS.length - failures.length, 'region')}.`];
   if (failures.length) parts.push(`Failed: ${failures.join(', ')}.`);
   statusEl.textContent = parts.join(' ');
   return rows;
@@ -85,15 +85,10 @@ function uniqueSorted(values) {
 }
 
 function populateFilters() {
-  // Region options come from the FULL operated set (incl. pending), not just
-  // regions that returned data — so the selector reflects where we're headed.
   const regions = uniqueSorted(REGIONS.map((r) => r.code));
-  const pending = new Set(REGIONS.filter((r) => !r.catalogUrl).map((r) => r.code));
   regionSel.innerHTML =
     `<option value="">All regions</option>` +
-    regions
-      .map((r) => `<option value="${esc(r)}">${esc(r)}${pending.has(r) ? ' (pending)' : ''}</option>`)
-      .join('');
+    regions.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
 
   const chains = uniqueSorted(ALL.map((s) => s.blockchain));
   chainSel.innerHTML =
@@ -105,9 +100,6 @@ function render() {
   const region = regionSel.value;
   const chain = chainSel.value;
 
-  // A region selected that has no data yet → explicit pending message.
-  const isPending = REGIONS.some((r) => r.code === region && !r.catalogUrl);
-
   const rows = ALL.filter(
     (s) => (!region || s.region === region) && (!chain || s.blockchain === chain)
   ).sort((a, b) =>
@@ -117,9 +109,7 @@ function render() {
   );
 
   if (!rows.length) {
-    resultsEl.innerHTML = isPending
-      ? `<p class="empty">${esc(region)} is an operated region but its catalog isn't deployed yet — no snapshots to show.</p>`
-      : `<p class="empty">No snapshots match.</p>`;
+    resultsEl.innerHTML = `<p class="empty">No snapshots match.</p>`;
     return;
   }
 

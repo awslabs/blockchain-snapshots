@@ -18,10 +18,31 @@ body {
   color: var(--text);
 }
 
-main { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+main { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
 
+/* Title + GitHub link share the first row; the tagline spans the full width
+   below, so it isn't squeezed beside the link on narrow screens. */
+.site-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1rem; align-items: start; }
+.site-header .sub { grid-column: 1 / -1; }
 header h1 { margin: 0 0 .35rem; font-size: 1.7rem; }
 .sub { color: var(--muted); margin: 0 0 1.75rem; }
+@media (max-width: 480px) { header h1 { font-size: 1.4rem; } }
+
+.repo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  flex-shrink: 0;
+  margin-top: .35rem;
+  padding: .35rem .7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: .85rem;
+  text-decoration: none;
+}
+.repo-link:hover, .repo-link:focus-visible { background: var(--panel); border-color: var(--muted); }
+.repo-link svg { width: 16px; height: 16px; fill: currentColor; }
 code { background: var(--panel); padding: .1em .35em; border-radius: 4px; }
 
 .filters { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
@@ -38,7 +59,7 @@ select {
 
 .status { color: var(--muted); font-size: .85rem; min-height: 1.2em; margin: .25rem 0 1.25rem; }
 
-.results { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+.results { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 1rem; }
 .empty { color: var(--muted); }
 
 .card {
@@ -71,3 +92,18 @@ select {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: .78rem;
 }
+
+
+/* Footer shares the content column (same max-width/padding as main) so it never
+   runs edge to edge, and its link uses the theme text color, not browser blue. */
+footer.disclaimer {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.25rem 2.5rem;
+  color: var(--muted);
+  font-size: .8rem;
+  text-align: center;
+}
+footer.disclaimer p { margin: 0; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+footer.disclaimer a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+footer.disclaimer a:hover, footer.disclaimer a:focus-visible { color: #fff; }

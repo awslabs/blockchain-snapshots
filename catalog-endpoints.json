@@ -1,8 +1,5 @@
 { "regions": [
   { "code": "us-east-1", "catalogUrl": "https://d21f2ia3ji12t6.cloudfront.net/catalog.json" },
-  { "code": "us-west-2", "catalogUrl": null },
   { "code": "eu-west-1", "catalogUrl": "https://d1z58vnewl54sx.cloudfront.net/catalog.json" },
-  { "code": "eu-central-1", "catalogUrl": null },
-  { "code": "ap-northeast-1", "catalogUrl": "https://d5uux2b9mnsyv.cloudfront.net/catalog.json" },
-  { "code": "ap-southeast-1", "catalogUrl": null }
+  { "code": "ap-northeast-1", "catalogUrl": "https://d5uux2b9mnsyv.cloudfront.net/catalog.json" }
 ] }
