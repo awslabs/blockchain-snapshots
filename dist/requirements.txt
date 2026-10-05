@@ -1,0 +1,21 @@
+# Python dependencies for the Blockchain Snapshots on AWS consumer toolkit.
+#
+#   pip install -r requirements.txt
+#
+# Versioning policy: compatible-release pins (`~=`). This allows patch/minor
+# updates — so upstream SECURITY fixes reach users without a toolkit release —
+# while blocking breaking major-version changes. Deliberately not exact-pinned
+# (`==`): this toolkit runs on machines we do not control, and freezing a
+# decompressor or AWS SDK at one build would keep users on unpatched versions.
+#
+# Both packages are permissively licensed and actively maintained.
+
+# Seekable/multi-frame zstd decompression in snapshot-extract.py.
+# REQUIRED — the extractor exits if it is missing.
+# License: BSD-3-Clause. Parses snapshot bytes, so keep it current.
+zstandard~=0.25.0
+
+# AWS SDK — required only for the `--s3` read path (byte-range GETs).
+# License: Apache-2.0. Already present on Amazon Linux / any host with aws-cli,
+# so this is usually already satisfied.
+boto3~=1.42

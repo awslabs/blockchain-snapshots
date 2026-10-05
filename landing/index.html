@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blockchain Snapshots on AWS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Blockchain Snapshots on AWS</h1>
+      <p class="sub">
+        Multi-region mirror of blockchain node snapshots. Metadata is loaded live
+        from public CloudFront catalogs (one <code>catalog.json</code> per region).
+      </p>
+    </header>
+
+    <section class="filters">
+      <label>
+        Region
+        <select id="region-select"><option value="">Loading…</option></select>
+      </label>
+      <label>
+        Blockchain
+        <select id="chain-select"><option value="">All</option></select>
+      </label>
+    </section>
+
+    <p id="status" class="status" role="status"></p>
+
+    <section id="results" class="results" aria-live="polite"></section>
+  </main>
+
+  <footer class="disclaimer">
+    <p>
+      Provided "AS IS" without warranty. Snapshot data is mirrored from
+      third-party sources; verify integrity before use. No availability or
+      freshness guarantee. This is not an AWS service and carries no SLA.
+      See <a href="https://github.com/awslabs/web3/blob/main/LICENSE">LICENSE</a>.
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
