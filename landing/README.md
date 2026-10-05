@@ -40,8 +40,8 @@ cd landing
 ```
 
 This reads deployed CloudFormation `CatalogUrl` outputs for each region in
-`config/regions.json`. Regions where the catalog CDN isn't deployed yet get
-`catalogUrl: null` and show on the page as "pending."
+`config/regions.json`. Regions where the catalog CDN isn't deployed yet are left
+out of the file (and listed on stderr), so the page only shows live regions.
 
 ## Local dev
 

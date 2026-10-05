@@ -51,7 +51,7 @@ sudo bash setup-storage.sh   # RAID-0 + mount /data; idempotent
 ./download-and-unpack.sh --bucket <bucket> --prefix <artifact-dir> --region us-east-1
 # e.g. --prefix ethereum/mainnet/geth/<block>   -> extracts to /data/extract
 ```
-Workers auto-tune to `min(nproc, 96)` (96 = the measured mountpoint-s3 sweet spot).
+Workers auto-tune to `min(nproc, 96)`.
 
 ## Performance (full Base sepolia reth, 765 GB, verified byte-identical)
 
@@ -60,21 +60,11 @@ Workers auto-tune to `min(nproc, 96)` (96 = the measured mountpoint-s3 sweet spo
 | i8g.12xlarge | 48 | 132s | 3.9× |
 | **i8g.24xlarge** | 96 | **70s** | **7.3×** |
 
-Bottleneck is mountpoint-s3 download concurrency (~6 GB/s at 96 workers), not CPU
-or disk. The win requires the producer to have re-packaged the snapshot into many
-independent zstd frames (a single-frame `.tar.zst` can't be decoded in parallel).
-
 ## Verify integrity
 
 Every published artifact is byte-identical to a serial extraction (full sha256,
 all files). To self-check: `sha256sum` an extracted file vs a
 `zstd -dc snapshot.tar.zst | tar -x` of the same.
-
-## Sharing with another AWS account
-
-Grant read with a cross-account bucket policy — see
-`service/security/policies/peer-bucket-policy.json` for the template (lists peer
-account IDs, scoped to read). Peers then run the steps above with their own creds.
 
 ## Disclaimer
 

@@ -1,7 +1,7 @@
 # Blockchain Snapshots on AWS
 
-Pre-synced blockchain node snapshots on Amazon S3 — bootstrap a node in minutes
-instead of days. Snapshots are re-packaged into a multi-frame **seekable** zstd
+Snapshots for public blockchains on Amazon S3. Bootstrap a node in minutes instead
+of hours. Snapshots are re-packaged into a multi-frame **seekable** zstd
 format so they download and extract in parallel, roughly **7× faster** than a
 single-stream `zstd -d | tar`.
 

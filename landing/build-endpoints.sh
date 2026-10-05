@@ -2,8 +2,9 @@
 # Generates landing/catalog-endpoints.json from the deployed CloudFormation stacks.
 #
 # Reads config/regions.json (region codes only) and for each region, queries the
-# CatalogUrl output of the deployed stack. If the stack doesn't exist or hasn't
-# deployed the catalog CDN yet, catalogUrl is null (the page shows it as "pending").
+# CatalogUrl output of the deployed stack. Regions whose stack or catalog CDN
+# isn't deployed yet are left out of the file (and listed on stderr), so the
+# published page only ever shows live regions.
 #
 # Usage:
 #   ./build-endpoints.sh --stage staging [--profile <your-aws-profile>]
@@ -46,7 +47,7 @@ AWS_OPTS=""
 
 # Fail fast on environment problems instead of mapping them to "not deployed":
 # without these checks, expired creds or a missing CLI would silently produce an
-# all-null endpoints file (every region "pending") with exit 0.
+# empty endpoints file (every region skipped) with exit 0.
 command -v aws  >/dev/null || { echo "error: aws CLI not found"; exit 1; }
 command -v node >/dev/null || { echo "error: node not found"; exit 1; }
 aws sts get-caller-identity $AWS_OPTS >/dev/null 2>&1 \
@@ -54,9 +55,11 @@ aws sts get-caller-identity $AWS_OPTS >/dev/null 2>&1 \
 
 echo '{ "regions": [' > "$OUT"
 first=true
+written=0
+skipped=""
 for R in $REGIONS; do
   STACK="snapshot-standard-${STAGE}-${R}"
-  # Capture stderr so we can tell "stack doesn't exist" (→ pending) apart from
+  # Capture stderr so we can tell "stack doesn't exist" (→ skip) apart from
   # every other failure (auth, network, throttle → abort; see check above).
   ERR=$(mktemp)
   URL=$(aws cloudformation describe-stacks \
@@ -73,18 +76,21 @@ for R in $REGIONS; do
       fi
     }
   rm -f "$ERR"
-  # If the output is empty or "None", the catalog isn't deployed yet.
+  # Empty output or "None" means the catalog isn't deployed yet: leave it out.
   if [[ -z "$URL" || "$URL" == "None" ]]; then
-    URL_JSON="null"
-  else
-    URL_JSON="\"$URL\""
+    skipped="$skipped $R"
+    continue
   fi
   $first || echo ',' >> "$OUT"
-  printf '  { "code": "%s", "catalogUrl": %s }' "$R" "$URL_JSON" >> "$OUT"
+  printf '  { "code": "%s", "catalogUrl": "%s" }' "$R" "$URL" >> "$OUT"
   first=false
+  written=$((written + 1))
 done
 echo '' >> "$OUT"
 echo '] }' >> "$OUT"
 
-echo "wrote $OUT (stage=$STAGE, $(echo "$REGIONS" | wc -w | tr -d ' ') regions)"
+echo "wrote $OUT (stage=$STAGE, $written of $(echo "$REGIONS" | wc -w | tr -d ' ') regions)"
+if [[ -n "$skipped" ]]; then
+  echo "skipped (catalog not deployed):$skipped" >&2
+fi
 cat "$OUT"

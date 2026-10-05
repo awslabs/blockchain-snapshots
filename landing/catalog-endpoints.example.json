@@ -1,11 +1,7 @@
 {
-  "_comment": "GENERATED at deploy time by build-endpoints.sh — DO NOT EDIT OR COMMIT. This example shows the expected shape. The real file (catalog-endpoints.json) is gitignored.",
+  "_comment": "GENERATED at deploy time by build-endpoints.sh — DO NOT EDIT OR COMMIT. This example shows the expected shape. The real file (catalog-endpoints.json) is gitignored. Only regions with a deployed catalog are listed.",
   "regions": [
     { "code": "us-east-1", "catalogUrl": "https://XXXX.cloudfront.net/catalog.json" },
-    { "code": "us-west-2", "catalogUrl": null },
-    { "code": "eu-west-1", "catalogUrl": null },
-    { "code": "eu-central-1", "catalogUrl": null },
-    { "code": "ap-northeast-1", "catalogUrl": null },
-    { "code": "ap-southeast-1", "catalogUrl": null }
+    { "code": "eu-west-1", "catalogUrl": "https://YYYY.cloudfront.net/catalog.json" }
   ]
 }
