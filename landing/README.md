@@ -45,7 +45,8 @@ python3 -m http.server 8791
 ```
 
 The page fetches `./config/regions.json`, then each region's current
-`catalog.json`. Catalog values are escaped before rendering. Copyable commands
-use one entrypoint (`snapshot.sh`) and stable catalog IDs; the script resolves
-the latest entry again when the operator runs it, so a long-open page does not
-produce a stale artifact key.
+`catalog.json`. It lists only the chains in `ENABLED_CHAINS` (`app.js`);
+catalog entries for any other chain are skipped. Catalog values are escaped
+before rendering. Copyable commands use one entrypoint (`snapshot.sh`) and
+stable catalog IDs; the script resolves the latest entry again when the
+operator runs it, so a long-open page does not produce a stale artifact key.

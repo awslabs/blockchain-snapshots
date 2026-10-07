@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
 
-// State: every catalog entry, flattened and tagged with its region and bucket.
+// State: catalog entries for enabled chains, flattened and tagged with their region.
 let ALL = [];
 // Regions are loaded from config/regions.json, the same active-region registry
 // consumed by snapshot.sh. Only entries with a catalog URL are active.
@@ -14,8 +14,17 @@ const chainSel = $('chain-select');
 const statusEl = $('status');
 const resultsEl = $('results');
 
-// Display names for the overview. Unknown values fall back to the raw value.
-const CHAIN_NAMES = { ethereum: 'Ethereum', robinhood: 'Robinhood Chain', solana: 'Solana' };
+// Chains this page lists, keyed by the catalog's `blockchain` value, with their
+// display names. This is an allowlist: entries for any other chain are dropped
+// as the catalogs load, so the overview, filters, and cards show a chain only
+// once it is added here. The catalogs themselves are not changed.
+const ENABLED_CHAINS = { ethereum: 'Ethereum', solana: 'Solana' };
+
+// Own keys only, so a catalog value such as "constructor" can't match.
+function isEnabledChain(blockchain) {
+  return typeof blockchain === 'string' && Object.hasOwn(ENABLED_CHAINS, blockchain);
+}
+
 const REGION_NAMES = {
   'us-east-1': 'US East (N. Virginia)',
   'us-west-2': 'US West (Oregon)',
@@ -107,7 +116,9 @@ async function loadCatalogs() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const cat = await res.json();
       const region = cat.region || r.code;
-      return (cat.snapshots || []).map((s) => ({ ...s, region }));
+      return (cat.snapshots || [])
+        .filter((s) => isEnabledChain(s?.blockchain))
+        .map((s) => ({ ...s, region }));
     })
   );
 
@@ -127,7 +138,7 @@ async function loadCatalogs() {
 
 // Keep the overview (chains, regions) in step with what the catalogs serve.
 function renderOverview() {
-  const chains = uniqueSorted(ALL.map((s) => CHAIN_NAMES[s.blockchain] || s.blockchain));
+  const chains = uniqueSorted(ALL.map((s) => ENABLED_CHAINS[s.blockchain]));
   if (chains.length) $('fact-chains').textContent = chains.join(', ');
 
   const codes = REGIONS.map((r) => r.code);
@@ -157,7 +168,7 @@ function populateFilters() {
   const chains = uniqueSorted(ALL.map((s) => s.blockchain));
   chainSel.innerHTML =
     `<option value="">All blockchains</option>` +
-    chains.map((c) => `<option value="${esc(c)}">${esc(CHAIN_NAMES[c] || c)}</option>`).join('');
+    chains.map((c) => `<option value="${esc(c)}">${esc(ENABLED_CHAINS[c])}</option>`).join('');
 }
 
 function render() {
