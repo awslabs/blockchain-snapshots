@@ -302,14 +302,25 @@ preflight_aws(){
   aws --version 2>&1 | grep -q 'aws-cli/2' || die "AWS CLI v2 is required (or use --install-deps)"
 }
 
-resolve_region(){
-  [ -n "$REGION" ] && return 0
-  command -v curl >/dev/null 2>&1 || die "--region is required when curl is unavailable for EC2 metadata detection"
+detect_imds_region(){
+  command -v curl >/dev/null 2>&1 || return 1
+  [ "${AWS_EC2_METADATA_DISABLED:-false}" != true ] || return 1
   local token
-  token="$(curl -fsS --max-time 2 -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null)" \
-    || die "cannot detect EC2 Region; pass --region"
-  REGION="$(curl -fsS --max-time 2 -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/placement/region 2>/dev/null)" \
-    || die "cannot detect EC2 Region; pass --region"
+  token="$(curl -fsS --max-time 1 -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null)" || return 1
+  curl -fsS --max-time 1 -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/placement/region 2>/dev/null
+}
+
+resolve_region(){
+  local instance_region
+  instance_region="$(detect_imds_region || true)"
+  if [ -z "$REGION" ]; then
+    [ -n "$instance_region" ] || die "cannot detect EC2 Region; pass --region"
+    REGION="$instance_region"
+    return 0
+  fi
+  if [ -n "$instance_region" ] && [ "$REGION" != "$instance_region" ]; then
+    die "this EC2 instance is in $instance_region, but the command selected $REGION. Snapshot artifacts require a same-Region S3 gateway endpoint. Re-run with --region $instance_region."
+  fi
 }
 
 registry_fallback(){
