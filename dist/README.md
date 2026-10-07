@@ -5,11 +5,15 @@ stable snapshot ID; the regional catalog declares where the artifact is and how
 it must be delivered. There is no hardcoded snapshot list in the tooling.
 
 ```bash
-sudo ./snapshot.sh \
+# Run once as your normal EC2 administrator account. It elevates only package
+# installation and does not download a snapshot.
+./snapshot.sh --setup
+
+# Run downloads without sudo, as the account that should own the data.
+./snapshot.sh \
   --snapshot ethereum-mainnet-geth \
   --region us-east-1 \
-  --out /data/ethereum-mainnet-geth \
-  --install-deps
+  --out /data/ethereum-mainnet-geth
 ```
 
 Run `./snapshot.sh --list --region us-east-1` to discover IDs, or use selectors
@@ -103,16 +107,26 @@ headroom, and a maximum of 96. This supports Docker, ECS and Kubernetes limits.
 Archive-set delivery always uses exact S3 artifact URIs from normalized catalog
 data.
 
-## Dependencies and OS/CPU support
+## Setup, dependencies, and OS/CPU support
 
 Supported hosts: Amazon Linux 2023 and Ubuntu 22.04/24.04, x86_64 and arm64.
+Run setup once, separately from data download:
 
-- Default: missing dependencies are reported with a fix.
-- `--install-deps`: install them through apt/dnf/yum (directly as root or through
-  sudo), including the architecture-matched AWS CLI v2 and mount-s3 where FUSE
-  can work.
-- Containers: bake dependencies into the image when possible; use `--source s3`
-  or leave `auto`.
+```bash
+./snapshot.sh --setup
+```
+
+Setup installs/verifies AWS CLI v2; Python 3 with boto3 and zstandard; the zstd
+and tar CLIs; curl and unzip; and mountpoint-s3/FUSE when usable. It invokes
+apt/dnf/yum through sudo when the caller is not root. In containers, bake these
+dependencies into the image instead.
+
+After setup, invoke snapshot downloads **without sudo**. Files are created as the
+invoking user. Node Runners uses `bcuser` (UID/GID 1002), so its root bootstrap
+should perform setup and storage preparation, then run the download as `bcuser`.
+A command deliberately invoked through sudo warns that its output will be
+root-owned. `--install-deps` remains temporarily available for compatibility,
+but it is not used by landing-page download commands.
 
 The Region is `--region`, then `AWS_REGION`/`AWS_DEFAULT_REGION`, then EC2 IMDSv2.
 The container must receive credentials through an ECS task role, EKS Pod

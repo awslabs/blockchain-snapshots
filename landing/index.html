@@ -75,9 +75,15 @@
           </p>
         </li>
         <li>
-          <h3>Get the tools</h3>
-          <p>The download command installs its own runtime dependencies. You only need <code>git</code> to get the current tooling.</p>
-          <p>Amazon Linux 2023:</p>
+          <h3>Get the tools and dependencies</h3>
+          <p>Setup installs:</p>
+          <ul>
+            <li>AWS CLI v2</li>
+            <li>Python 3 with <code>boto3</code> and <code>zstandard</code></li>
+            <li><code>zstd</code>, <code>tar</code>, <code>curl</code>, and <code>unzip</code></li>
+            <li>mountpoint-s3 and FUSE when the instance supports them; otherwise downloads use S3 directly</li>
+          </ul>
+          <p>First get the repository. Amazon Linux 2023:</p>
           <div class="codeblock"><pre><code>sudo dnf install -y git
 cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
 cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
@@ -85,6 +91,13 @@ cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria
           <div class="codeblock"><pre><code>sudo apt-get update &amp;&amp; sudo apt-get install -y git
 cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
 cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+          <p>Then run setup once:</p>
+          <div class="codeblock"><pre><code>./snapshot.sh --setup</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+          <p class="note">
+            Setup may prompt for <code>sudo</code>. Snapshot download commands do
+            not use <code>sudo</code>; run them as the account that should own the
+            data. AWS Blockchain Node Runners uses <code>bcuser</code>.
+          </p>
         </li>
         <li>
           <h3>Set up storage</h3>
@@ -97,7 +110,7 @@ cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria
           <p><strong>EBS volume</strong> — no RAID needed. If it's an extra volume (here <code>/dev/nvme1n1</code>), format and mount it once; if you're using the root volume, just make the directory:</p>
           <div class="codeblock"><pre><code>sudo mkfs.xfs -f /dev/nvme1n1          # skip if already formatted
 sudo mkdir -p /data &amp;&amp; sudo mount /dev/nvme1n1 /data
-sudo chown "$(id -u)" /data</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+sudo chown "$(id -u):$(id -g)" /data</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
           <p class="note">
             On EBS the extractor writes buffered automatically; on local NVMe it
             uses O_DIRECT. Either way the result is identical — size the volume for
@@ -109,8 +122,7 @@ sudo chown "$(id -u)" /data</code></pre><button type="button" class="copy" aria-
           <p>
             Pick a snapshot below and run its command from the <code>dist</code>
             folder. <code>snapshot.sh</code> resolves the latest catalog entry at
-            execution time, installs missing dependencies, checks storage, and
-            selects the delivery method from catalog data. Each snapshot writes
+            execution time, checks storage, and selects the delivery method from catalog data. Each snapshot writes
             to its own folder under <code>/data</code>.
           </p>
           <p>

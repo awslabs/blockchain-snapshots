@@ -11,11 +11,15 @@ volume and an S3 gateway VPC endpoint:
 
 ```bash
 cd dist
-sudo ./snapshot.sh \
+
+# One-time dependency setup. Elevates package installation only.
+./snapshot.sh --setup
+
+# Download as the user that should own the node data.
+./snapshot.sh \
   --snapshot ethereum-mainnet-geth \
   --region us-east-1 \
-  --out /data/ethereum-mainnet-geth \
-  --install-deps
+  --out /data/ethereum-mainnet-geth
 ```
 
 Discover current IDs:

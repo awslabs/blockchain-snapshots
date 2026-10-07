@@ -76,7 +76,7 @@ function commandFor(s) {
   const id = s.id || `${s.blockchain}-${s.network}-${s.client}`; // v1 adapter
   const out = `/data/${id}`;
   if (!shellSafe(id, s.region, out)) return null;
-  return `sudo ./snapshot.sh --snapshot ${id} --region ${s.region} --out ${out} --install-deps`;
+  return `./snapshot.sh --snapshot ${id} --region ${s.region} --out ${out}`;
 }
 
 function codeBlock(text) {

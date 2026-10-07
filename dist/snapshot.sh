@@ -36,6 +36,7 @@ INSTALL_DEPS=0
 FORCE=0
 JSON_OUTPUT=0
 LIST_ONLY=0
+SETUP_ONLY=0
 LEGACY_PARALLEL=0
 BUCKET="${BUCKET:-}"
 PREFIX="${PREFIX:-}"
@@ -74,6 +75,7 @@ EXTRACT_CMD=()
 usage(){
   cat <<'EOF'
 Usage:
+  snapshot.sh --setup
   snapshot.sh --snapshot ID [options]
   snapshot.sh --chain CHAIN [--network NETWORK] [--client CLIENT] [options]
   snapshot.sh --list [--region REGION] [--json]
@@ -82,6 +84,7 @@ Resolve the latest snapshot from the public catalog and download it. Delivery
 method is data-driven; users do not choose remint/mirror/archive or a version.
 
 Selection:
+  --setup             install/verify tools only; do not resolve or download
   --snapshot ID       stable catalog ID, e.g. ethereum-mainnet-geth
   --chain CHAIN       convenience selector; must resolve to one entry
   --network NETWORK   narrow a convenience selection
@@ -132,6 +135,7 @@ parse_args(){
       --force) FORCE=1; shift;;
       --json) JSON_OUTPUT=1; shift;;
       --list) LIST_ONLY=1; shift;;
+      --setup) SETUP_ONLY=1; shift;;
       --legacy-parallel) LEGACY_PARALLEL=1; shift;;
       --bucket) need_value "$1" $#; BUCKET="$2"; shift 2;;
       --prefix) need_value "$1" $#; PREFIX="$2"; shift 2;;
@@ -144,6 +148,13 @@ parse_args(){
   case "$SOURCE" in auto|mount|s3) ;; *) usage_error "--source must be auto, mount or s3 (got '$SOURCE')";; esac
   case "$ODIRECT" in auto|on|off) ;; *) usage_error "--o-direct must be auto, on or off (got '$ODIRECT')";; esac
   case "$WORKERS" in ''|*[!0-9]*) usage_error "--workers must be a whole number (got '$WORKERS')";; esac
+  if [ "$SETUP_ONLY" -eq 1 ]; then
+    if [ -n "$SNAPSHOT_ID$CHAIN$NETWORK$CLIENT$OUT" ] || [ "$LIST_ONLY" -eq 1 ] || [ "$LEGACY_PARALLEL" -eq 1 ]; then
+      usage_error "--setup cannot be combined with snapshot selection, --list, --out, or legacy mode"
+    fi
+    INSTALL_DEPS=1
+    return
+  fi
   if [ "$LEGACY_PARALLEL" -eq 1 ]; then
     [ -n "$BUCKET" ] || usage_error "--bucket is required"
     [ -n "$PREFIX" ] || usage_error "--prefix is required"
@@ -298,8 +309,25 @@ preflight_resolver(){
 }
 
 preflight_aws(){
-  command -v aws >/dev/null 2>&1 || die "AWS CLI missing (or use --install-deps)"
-  aws --version 2>&1 | grep -q 'aws-cli/2' || die "AWS CLI v2 is required (or use --install-deps)"
+  command -v aws >/dev/null 2>&1 || die "AWS CLI missing (run snapshot.sh --setup)"
+  aws --version 2>&1 | grep -q 'aws-cli/2' || die "AWS CLI v2 is required (run snapshot.sh --setup)"
+}
+
+preflight_setup(){
+  preflight_resolver
+  preflight_aws
+  local missing=0
+  for command in curl unzip zstd tar; do
+    command -v "$command" >/dev/null 2>&1 || { echo "ERROR: setup did not install $command" >&2; missing=1; }
+  done
+  python3 -c 'import boto3,zstandard' 2>/dev/null || { echo "ERROR: setup did not install Python boto3 and zstandard" >&2; missing=1; }
+  [ "$missing" -eq 0 ] || exit 1
+  say "setup complete: AWS CLI v2, Python 3, boto3, zstandard, zstd, tar, curl and unzip"
+  if command -v mount-s3 >/dev/null 2>&1; then
+    say "optional mountpoint-s3 installed"
+  else
+    say "optional mountpoint-s3 skipped; direct S3 delivery is available"
+  fi
 }
 
 detect_imds_region(){
@@ -640,12 +668,19 @@ cleanup(){
   if [ "$DEBUG" = 1 ]; then echo "DEBUG: kept work dir $WORKDIR" >&2; else rm -rf "$WORKDIR" || true; fi
 }
 
+warn_if_sudo_download(){
+  if [ "$SETUP_ONLY" -eq 0 ] && [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != root ]; then
+    warn "snapshot.sh was invoked through sudo; output will be owned by root. Run the download without sudo after setup, or run it as the node service user."
+  fi
+}
+
 main(){
   set -euo pipefail
   export PATH="$PATH:/usr/local/bin:/usr/sbin:/usr/bin:/bin"
   HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
   parse_args "$@"
   [ "$DEBUG" = 1 ] && set -x
+  warn_if_sudo_download
   guard_output_path  # explicit dangerous --out is refused before dependencies/network
   if [ "$LEGACY_PARALLEL" -eq 1 ]; then
     PROTOCOL=tar-zstd-seekable-v1
@@ -653,6 +688,10 @@ main(){
   fi
   make_workdir; trap cleanup EXIT
   [ "$INSTALL_DEPS" -eq 1 ] && install_deps
+  if [ "$SETUP_ONLY" -eq 1 ]; then
+    preflight_setup
+    return 0
+  fi
   preflight_resolver
   resolve_region
 
