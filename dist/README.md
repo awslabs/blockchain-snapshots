@@ -148,9 +148,8 @@ public experience is latest-only.
 
 The resolver validates catalog shape and exact S3 URIs. Artifact size is checked
 against the catalog before delivery; seekable artifacts are also checked against
-the download manifest. Catalog v2 will carry complete checksums and producer-
-computed storage requirements; see `docs/consumer-cli-distribution-design.md`
-in the internal source repository.
+the download manifest. A future catalog schema can carry complete checksums and
+producer-computed storage requirements.
 
 ## Disclaimer
 
