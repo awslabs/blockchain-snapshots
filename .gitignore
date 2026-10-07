@@ -1,0 +1,5 @@
+# Generated per-environment — never commit (carries env-specific CloudFront URLs).
+landing/catalog-endpoints.json
+__pycache__/
+*.pyc
+.DS_Store

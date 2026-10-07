@@ -1,96 +1,85 @@
 #!/usr/bin/env bash
-# Generates landing/catalog-endpoints.json from the deployed CloudFormation stacks.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Regenerate config/regions.json, the public active-region registry consumed by
+# both the landing page and dist/snapshot.sh.
 #
-# Reads config/regions.json (region codes only) and for each region, queries the
-# CatalogUrl output of the deployed stack. Regions whose stack or catalog CDN
-# isn't deployed yet are left out of the file (and listed on stderr), so the
-# published page only ever shows live regions.
+# Reads candidate region codes from ../config/regions.json, queries the deployed
+# CloudFormation stacks, and emits ONLY regions with both CatalogUrl and
+# BucketName outputs. This is a read-only operation; it does not deploy AWS
+# resources. Production output is committed/published with the landing page.
 #
 # Usage:
-#   ./build-endpoints.sh --stage staging [--profile <your-aws-profile>]
-#   ./build-endpoints.sh --stage production --profile <your-aws-profile>
-#
-# The output (catalog-endpoints.json) is gitignored — it never carries staging
-# URLs into a production repo or vice versa.
+#   ./build-endpoints.sh --stage production [--profile PROFILE] [--out FILE]
 
 set -euo pipefail
-
 STAGE=""
 PROFILE=""
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+OUT="$SCRIPT_DIR/config/regions.json"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --stage)   STAGE="$2"; shift 2;;
+    --stage) STAGE="$2"; shift 2;;
     --profile) PROFILE="$2"; shift 2;;
-    *) echo "unknown: $1"; exit 1;;
+    --out) OUT="$2"; shift 2;;
+    *) echo "unknown argument: $1" >&2; exit 2;;
   esac
 done
+[[ -n "$STAGE" ]] || { echo "usage: $0 --stage <stage> [--profile PROFILE] [--out FILE]" >&2; exit 2; }
 
-if [[ -z "$STAGE" ]]; then
-  echo "usage: $0 --stage <staging|production> [--profile <aws-profile>]"
-  exit 1
-fi
+CANDIDATES="$SCRIPT_DIR/../config/regions.json"
+[[ -f "$CANDIDATES" ]] || { echo "error: $CANDIDATES not found" >&2; exit 1; }
+command -v aws >/dev/null || { echo "error: aws CLI not found" >&2; exit 1; }
+command -v python3 >/dev/null || { echo "error: python3 not found" >&2; exit 1; }
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REGIONS_FILE="$SCRIPT_DIR/../config/regions.json"
-OUT="$SCRIPT_DIR/catalog-endpoints.json"
+AWS_OPTS=()
+[[ -n "$PROFILE" ]] && AWS_OPTS+=(--profile "$PROFILE")
+aws sts get-caller-identity "${AWS_OPTS[@]}" >/dev/null 2>&1 \
+  || { echo "error: AWS credentials invalid/expired (profile: ${PROFILE:-default})" >&2; exit 1; }
 
-if [[ ! -f "$REGIONS_FILE" ]]; then
-  echo "error: $REGIONS_FILE not found"
-  exit 1
-fi
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT
+python3 - "$CANDIDATES" >"$TMP" <<'PY'
+import json,sys
+for region in json.load(open(sys.argv[1]))['regions']:
+    print(region)
+PY
 
-REGIONS=$(node -e "console.log(require('$REGIONS_FILE').regions.join(' '))")
-
-AWS_OPTS=""
-[[ -n "$PROFILE" ]] && AWS_OPTS="--profile $PROFILE"
-
-# Fail fast on environment problems instead of mapping them to "not deployed":
-# without these checks, expired creds or a missing CLI would silently produce an
-# empty endpoints file (every region skipped) with exit 0.
-command -v aws  >/dev/null || { echo "error: aws CLI not found"; exit 1; }
-command -v node >/dev/null || { echo "error: node not found"; exit 1; }
-aws sts get-caller-identity $AWS_OPTS >/dev/null 2>&1 \
-  || { echo "error: AWS credentials invalid/expired (profile: ${PROFILE:-default})"; exit 1; }
-
-echo '{ "regions": [' > "$OUT"
-first=true
+mkdir -p "$(dirname "$OUT")"
+RESULT="$(mktemp)"
+trap 'rm -f "$TMP" "$RESULT"' EXIT
+printf '{\n  "schema_version": 1,\n  "regions": [\n' >"$RESULT"
+first=1
 written=0
-skipped=""
-for R in $REGIONS; do
-  STACK="snapshot-standard-${STAGE}-${R}"
-  # Capture stderr so we can tell "stack doesn't exist" (→ skip) apart from
-  # every other failure (auth, network, throttle → abort; see check above).
-  ERR=$(mktemp)
-  URL=$(aws cloudformation describe-stacks \
-    --region "$R" --stack-name "$STACK" \
-    --query "Stacks[0].Outputs[?OutputKey=='CatalogUrl'].OutputValue" \
-    --output text $AWS_OPTS 2>"$ERR") || {
-      if grep -q "does not exist" "$ERR"; then
-        URL=""
-      else
-        echo "error: describe-stacks failed for $STACK in $R:" >&2
-        cat "$ERR" >&2
-        rm -f "$ERR"
-        exit 1
-      fi
-    }
-  rm -f "$ERR"
-  # Empty output or "None" means the catalog isn't deployed yet: leave it out.
-  if [[ -z "$URL" || "$URL" == "None" ]]; then
-    skipped="$skipped $R"
-    continue
-  fi
-  $first || echo ',' >> "$OUT"
-  printf '  { "code": "%s", "catalogUrl": "%s" }' "$R" "$URL" >> "$OUT"
-  first=false
-  written=$((written + 1))
-done
-echo '' >> "$OUT"
-echo '] }' >> "$OUT"
+while IFS= read -r region; do
+  stack="snapshot-standard-${STAGE}-${region}"
+  outputs="$(aws cloudformation describe-stacks --region "$region" --stack-name "$stack" \
+    --query 'Stacks[0].Outputs[].[OutputKey,OutputValue]' --output text "${AWS_OPTS[@]}" 2>/dev/null || true)"
+  catalog_url="$(printf '%s\n' "$outputs" | awk '$1=="CatalogUrl" {$1=""; sub(/^ /,""); print; exit}')"
+  bucket="$(printf '%s\n' "$outputs" | awk '$1=="BucketName" {$1=""; sub(/^ /,""); print; exit}')"
+  [[ -n "$catalog_url" && "$catalog_url" != None && -n "$bucket" && "$bucket" != None ]] || continue
+  name="$(python3 - "$region" <<'PY'
+import sys
+names={'us-east-1':'US East (N. Virginia)','eu-west-1':'Europe (Ireland)','ap-northeast-1':'Asia Pacific (Tokyo)'}
+print(names.get(sys.argv[1],sys.argv[1]))
+PY
+)"
+  [[ "$first" -eq 1 ]] || printf ',\n' >>"$RESULT"
+  python3 - "$region" "$name" "$catalog_url" "$bucket" >>"$RESULT" <<'PY'
+import json,sys
+region,name,url,bucket=sys.argv[1:]
+value={'code':region,'name':name,'catalog_url':url,
+       'catalog_s3_uri':f's3://{bucket}/catalog.json'}
+print('    '+json.dumps(value,separators=(',',': ')),end='')
+PY
+  first=0
+  written=$((written+1))
+done <"$TMP"
+printf '\n  ]\n}\n' >>"$RESULT"
 
-echo "wrote $OUT (stage=$STAGE, $written of $(echo "$REGIONS" | wc -w | tr -d ' ') regions)"
-if [[ -n "$skipped" ]]; then
-  echo "skipped (catalog not deployed):$skipped" >&2
-fi
+[[ "$written" -gt 0 ]] || { echo "error: no active regional catalogs found; refusing to overwrite $OUT" >&2; exit 1; }
+mv "$RESULT" "$OUT"
+trap 'rm -f "$TMP"' EXIT
+echo "wrote $OUT ($written active regions, stage=$STAGE)"
 cat "$OUT"

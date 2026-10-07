@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
 # setup-storage.sh — RAID-0 the instance-store NVMe drives and mount at /data.
 # Run ON the instance, as root, BEFORE download-and-unpack.sh. Idempotent and
 # observable (unlike fire-and-forget cloud-init): prints what it does and fails
@@ -19,7 +21,15 @@ if mountpoint -q "$MNT"; then
   say "WARNING: $MNT mounted but only ${GB}G — not the instance-store array"
 fi
 
-command -v mdadm >/dev/null || { say "installing mdadm/xfsprogs..."; dnf install -y mdadm xfsprogs >/dev/null 2>&1; }
+command -v mdadm >/dev/null || {
+  say "installing mdadm/xfsprogs...";
+  if command -v apt-get >/dev/null; then
+    DEBIAN_FRONTEND=noninteractive apt-get update -y >/dev/null 2>&1 || true
+    apt-get install -y mdadm xfsprogs >/dev/null 2>&1
+  elif command -v dnf >/dev/null; then dnf install -y mdadm xfsprogs >/dev/null 2>&1
+  elif command -v yum >/dev/null; then yum install -y mdadm xfsprogs >/dev/null 2>&1
+  fi
+}
 
 # Find instance-store NVMe (exclude the root EBS volume).
 NV=$(lsblk -dn -o NAME,MODEL | awk '/Instance Storage/{print "/dev/"$1}')

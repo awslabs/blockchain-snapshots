@@ -13,9 +13,20 @@
 # Seekable/multi-frame zstd decompression in snapshot-extract.py.
 # REQUIRED — the extractor exits if it is missing.
 # License: BSD-3-Clause. Parses snapshot bytes, so keep it current.
-zstandard~=0.25.0
+#
+# Lower bound 0.22 (not ~=0.25): Ubuntu 24.04's apt python3-zstandard is 0.22.0,
+# which is verified to work (byte-identical extraction) and lets apt satisfy the
+# dependency without a PEP 668-blocked system-wide pip install. The lower bound
+# still guarantees read_across_frames support; no exact upper pin so security
+# patches reach users.
+zstandard>=0.22
 
-# AWS SDK — required only for the `--s3` read path (byte-range GETs).
-# License: Apache-2.0. Already present on Amazon Linux / any host with aws-cli,
-# so this is usually already satisfied.
-boto3~=1.42
+# AWS SDK — required for the `--s3` read path (ranged GETs), which is what
+# download-and-unpack.sh uses wherever FUSE/mount-s3 is unavailable (most
+# containers). License: Apache-2.0.
+#
+# Lower bound 1.20 (not ~=1.42), for the same reason as zstandard above: the
+# distro packages must satisfy it so no system-wide pip install is needed
+# (Ubuntu 22.04 apt python3-boto3 is 1.20, 24.04 is 1.34). The extractor only
+# uses ranged GetObject and adaptive retries, which 1.20 has.
+boto3>=1.20

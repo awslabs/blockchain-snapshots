@@ -4,9 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Blockchain Snapshots on AWS</title>
+  <meta name="description" content="Skip the initial sync: bootstrap your node from a pre-synced snapshot in Amazon S3." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <nav class="topbar" aria-label="Primary">
+    <div class="topbar-inner">
+      <a class="brand" href="/" aria-label="Blockchain Snapshots on AWS — home">Blockchain Snapshots</a>
+      <ul class="nav-links">
+        <li><a href="https://aws.amazon.com/web3/">Web3 on AWS</a></li>
+        <li><a href="https://aws.amazon.com/blogs/web3/">Blog</a></li>
+        <li><a href="https://aws-samples.github.io/aws-blockchain-node-runners/">Node Runners</a></li>
+        <li><a href="/" aria-current="page">Snapshots</a></li>
+        <li><a href="https://registry.opendata.aws/aws-public-blockchain/">Datasets</a></li>
+        <li><a href="https://startups.aws.com/lp/web3">Startups</a></li>
+      </ul>
+    </div>
+  </nav>
+
   <main>
     <header class="site-header">
       <h1>Blockchain Snapshots on AWS</h1>
@@ -16,25 +31,115 @@
         </svg>
         <span>GitHub</span>
       </a>
-      <p class="sub">
-        Skip the initial sync: bootstrap your node from a pre-synced snapshot in Amazon S3.
-      </p>
+      <p class="sub">Skip the initial sync: bootstrap your node from a pre-synced snapshot in Amazon S3.</p>
     </header>
 
-    <section class="filters">
-      <label>
-        Region
-        <select id="region-select"><option value="">Loading…</option></select>
-      </label>
-      <label>
-        Blockchain
-        <select id="chain-select"><option value="">All</option></select>
-      </label>
+    <section class="hero" aria-label="Overview">
+      <p>
+        Each snapshot is a copy of a node database from the network's upstream
+        publisher, refreshed on their schedule. Download one to an EC2 instance in
+        the same Region and start your node from it. There is no charge for the
+        snapshots. Standard charges apply for the instance and storage you use.
+      </p>
+      <dl class="facts">
+        <div><dt>Chains</dt><dd id="fact-chains">Ethereum, Robinhood Chain, Solana</dd></div>
+        <div><dt>Regions</dt><dd id="fact-regions">US East (N. Virginia), Europe (Ireland), Asia Pacific (Tokyo)</dd></div>
+      </dl>
+      <div class="cta">
+        <a class="button primary" href="#get-started">Get started</a>
+        <a class="button" href="#snapshots">Browse snapshots</a>
+      </div>
     </section>
 
-    <p id="status" class="status" role="status"></p>
+    <section id="get-started" class="get-started" aria-labelledby="get-started-title">
+      <h2 id="get-started-title">Get started</h2>
+      <p class="note">
+        Snapshots are only reachable through an Amazon S3 gateway VPC endpoint, so you
+        download them from an EC2 instance in the same Region. A laptop or a browser
+        won't work.
+      </p>
+      <ol class="steps">
+        <li>
+          <h3>Use an instance</h3>
+          <p>
+            Run these steps on an EC2 instance in
+            <span data-region-codes>us-east-1, eu-west-1, or ap-northeast-1</span>,
+            running <strong>Amazon Linux 2023</strong> or <strong>Ubuntu 24.04</strong>.
+            Its VPC needs an S3 gateway endpoint, and its instance profile needs
+            <code>s3:GetObject</code> and <code>s3:ListBucket</code>.
+          </p>
+          <p>
+            Storage can be either <strong>local NVMe</strong> (instance types like
+            i4i or i8g — fastest) or an <strong>EBS volume</strong> large enough for
+            the extracted snapshot. Step 3 covers both.
+          </p>
+        </li>
+        <li>
+          <h3>Get the tools</h3>
+          <p>The download command installs its own runtime dependencies. You only need <code>git</code> to get the current tooling.</p>
+          <p>Amazon Linux 2023:</p>
+          <div class="codeblock"><pre><code>sudo dnf install -y git
+cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
+cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+          <p>Ubuntu 24.04:</p>
+          <div class="codeblock"><pre><code>sudo apt-get update &amp;&amp; sudo apt-get install -y git
+cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
+cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+        </li>
+        <li>
+          <h3>Set up storage</h3>
+          <p>
+            Extract to a dedicated directory on a volume with room for the full
+            snapshot. Pick the one that matches your instance.
+          </p>
+          <p><strong>Local NVMe</strong> — join the instance's NVMe drives into one volume at <code>/data</code>:</p>
+          <div class="codeblock"><pre><code>sudo bash setup-storage.sh</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+          <p><strong>EBS volume</strong> — no RAID needed. If it's an extra volume (here <code>/dev/nvme1n1</code>), format and mount it once; if you're using the root volume, just make the directory:</p>
+          <div class="codeblock"><pre><code>sudo mkfs.xfs -f /dev/nvme1n1          # skip if already formatted
+sudo mkdir -p /data &amp;&amp; sudo mount /dev/nvme1n1 /data
+sudo chown "$(id -u)" /data</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+          <p class="note">
+            On EBS the extractor writes buffered automatically; on local NVMe it
+            uses O_DIRECT. Either way the result is identical — size the volume for
+            the snapshot's extracted size, not its download size.
+          </p>
+        </li>
+        <li>
+          <h3>Download a snapshot</h3>
+          <p>
+            Pick a snapshot below and run its command from the <code>dist</code>
+            folder. <code>snapshot.sh</code> resolves the latest catalog entry at
+            execution time, installs missing dependencies, checks storage, and
+            selects the delivery method from catalog data. Each snapshot writes
+            to its own folder under <code>/data</code>.
+          </p>
+          <p>
+            For archive-set snapshots such as Solana, the files remain compressed
+            because the node unpacks them itself. Start Agave with
+            <code>--snapshots</code> pointing at that folder and
+            <code>--no-snapshot-fetch</code>.
+          </p>
+        </li>
+      </ol>
+    </section>
 
-    <section id="results" class="results" aria-live="polite"></section>
+    <section id="snapshots" class="snapshots" aria-labelledby="snapshots-title">
+      <h2 id="snapshots-title">Available snapshots</h2>
+      <div class="filters">
+        <label>
+          Region
+          <select id="region-select"><option value="">Loading…</option></select>
+        </label>
+        <label>
+          Blockchain
+          <select id="chain-select"><option value="">All</option></select>
+        </label>
+      </div>
+
+      <p id="status" class="status" role="status"></p>
+
+      <div id="results" class="results" aria-live="polite"></div>
+    </section>
   </main>
 
   <footer class="disclaimer">
