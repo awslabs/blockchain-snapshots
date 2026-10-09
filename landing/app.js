@@ -37,7 +37,7 @@ const CLOCK_MS = 30 * 1000;
 
 const state = {
   regions: [], catalogs: new Map(), failures: [], region: '', chain: '',
-  signature: '', checkedAt: 0, attemptedAt: 0, refreshing: false, timer: 0,
+  signature: '', attemptedAt: 0, refreshing: false, timer: 0,
 };
 
 function isEnabledChain(blockchain) {
@@ -310,33 +310,23 @@ function renderResults({ keepFocus = false } = {}) {
   renderStatus();
 }
 
-// The live region announces counts and failures only; timestamps live outside it.
+// The live region announces the snapshot count, plus any Region that failed.
 function renderStatus() {
   const catalog = state.catalogs.get(state.region);
   const rows = (catalog ? catalog.rows : []).filter((s) => !state.chain || s.blockchain === state.chain);
-  const parts = [];
-  if (catalog) parts.push(`${rows.length} snapshot${rows.length === 1 ? '' : 's'} in ${state.region}`);
-  parts.push(`${state.catalogs.size} of ${state.regions.length} Regions loaded`);
-  let text = parts.join(' · ');
-  if (state.failures.length) {
-    const kept = state.failures.filter((f) => state.catalogs.has(f.code)).map((f) => f.code);
-    const lost = state.failures.filter((f) => !state.catalogs.has(f.code)).map((f) => `${f.code} (${f.reason})`);
-    if (kept.length) text += `. Couldn’t refresh ${joinList(kept, 'and')}; showing the last loaded data`;
-    if (lost.length) text += `. Couldn’t load ${lost.join(', ')}`;
-    text += '.';
-  }
+  const sentences = [];
+  if (catalog) sentences.push(`${rows.length} snapshot${rows.length === 1 ? '' : 's'} in ${state.region}`);
+  const kept = state.failures.filter((f) => state.catalogs.has(f.code)).map((f) => f.code);
+  const lost = state.failures.filter((f) => !state.catalogs.has(f.code)).map((f) => `${f.code} (${f.reason})`);
+  if (kept.length) sentences.push(`Couldn’t refresh ${joinList(kept, 'and')}; showing the last loaded data`);
+  if (lost.length) sentences.push(`Couldn’t load ${lost.join(', ')}`);
+  let text = sentences.join('. ');
+  if (kept.length || lost.length) text += '.';
   if ($('status').textContent !== text) $('status').textContent = text;
 }
 
 function updateTimes() {
   document.querySelectorAll('time[data-rel]').forEach((t) => { t.textContent = relTime(t.dateTime); });
-  const catalog = state.catalogs.get(state.region);
-  const parts = [];
-  if (catalog) parts.push(`catalog generated ${relTime(catalog.generated)}`);
-  if (state.refreshing) parts.push('checking for updates…');
-  else if (state.checkedAt) parts.push(`checked ${relTime(new Date(state.checkedAt).toISOString())}`);
-  parts.push('refreshes every 5 minutes');
-  $('freshness').textContent = ` · ${parts.join(' · ')}`;
   const term = $('term-caption');
   const first = state.catalogs.get(term.dataset.region);
   if (first) term.textContent = `Live from the ${first.code} catalog · generated ${relTime(first.generated)}`;
@@ -453,7 +443,6 @@ async function refresh() {
     state.regions = regions;
     state.catalogs = ordered;
     state.failures = failures;
-    if (ordered.size) state.checkedAt = Date.now();
     const next = signature();
     if (next !== state.signature) {
       state.signature = next;
