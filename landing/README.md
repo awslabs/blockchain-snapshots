@@ -28,7 +28,10 @@ when it finds no active catalogs.
 
 ## Files
 
-- `index.html`, `styles.css`, `app.js` — static page.
+- `index.html`, `site.css`, `app.js` — static page.
+- `brand/` — AWS brand stylesheet, palette tokens, and logo. The page uses
+  system fonts only; don't add web-font files.
+- `assets/` — illustration and background images.
 - `config/regions.json` — active Region + catalog registry.
 - `build-endpoints.sh` — read-only registry generator from CloudFormation
   outputs.
@@ -45,8 +48,9 @@ python3 -m http.server 8791
 ```
 
 The page fetches `./config/regions.json`, then each region's current
-`catalog.json`. It lists only the chains in `ENABLED_CHAINS` (`app.js`);
-catalog entries for any other chain are skipped. Catalog values are escaped
-before rendering. Copyable commands use one entrypoint (`snapshot.sh`) and
-stable catalog IDs; the script resolves the latest entry again when the
-operator runs it, so a long-open page does not produce a stale artifact key.
+`catalog.json`, and checks the catalogs again every 5 minutes while the tab is
+visible. It lists only the chains in `ENABLED_CHAINS` (`app.js`); catalog
+entries for any other chain are skipped. Catalog values are escaped before
+rendering. Copyable commands use one entrypoint (`snapshot.sh`) and stable
+catalog IDs; the script resolves the latest entry again when the operator runs
+it, so a long-open page does not produce a stale artifact key.

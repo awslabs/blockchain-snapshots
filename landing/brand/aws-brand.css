@@ -1,0 +1,158 @@
+/*
+  AWS brand foundation for this page, following the AWS brand guidelines:
+  - Regular weight for headlines (no bold headlines, sentence case, left aligned)
+  - Monospace uppercase for eyebrows and captions only
+  - Gray 850 / White are the anchor colors; brand colors stay out of body copy and CTAs
+  - CTAs: medium weight + arrow, no underline, no container, 3-4 words max
+  - Links: Blue 600 on light, Blue 500 on dark
+  - Rounded corners for inset imagery on screen; square corners for full-bleed and print
+
+  System fonts only. Don't add web-font files: the AWS brand typeface may not be
+  redistributed in this public repository.
+*/
+@import url("aws-palette.css");
+
+:root {
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text: var(--aws-gray-850);
+  --text-muted: var(--aws-gray-600);
+  --rule: var(--aws-gray-300);
+  --surface: #fff;
+  --surface-subtle: var(--aws-gray-150);
+  --link: var(--aws-blue-600);
+  --accent: var(--aws-blue-600);
+
+  --cta-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23161D26' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 8h11.5M9 3.5 13.5 8 9 12.5'/%3E%3C/svg%3E");
+
+  --radius: 1rem;
+  --radius-sm: 0.5rem;
+
+  --fs-caption: 0.8125rem;
+  --fs-eyebrow: 0.8125rem;
+  --fs-small: 0.9375rem;
+  --fs-body: 1.125rem;
+  --fs-lead: 1.375rem;
+  --fs-h3: 1.5rem;
+  --fs-h2: 2.875rem;
+  --fs-h1: 4.25rem;
+  --fs-stat: 3.5rem;
+
+  --lh-tight: 1.12;
+  --lh-body: 1.4;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+}
+
+.theme-dark {
+  --text: #fff;
+  --text-muted: var(--aws-gray-350);
+  --rule: rgb(255 255 255 / 0.22);
+  --surface-subtle: rgb(255 255 255 / 0.07);
+  --link: var(--aws-blue-500);
+  --accent: var(--aws-blue-300);
+  --cta-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 8h11.5M9 3.5 13.5 8 9 12.5'/%3E%3C/svg%3E");
+  color: var(--text);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+  font-variant-ligatures: none;
+  text-rendering: optimizeLegibility;
+}
+
+body { margin: 0; font-size: var(--fs-body); line-height: var(--lh-body); }
+
+h1, h2, h3, h4 { font-weight: 400; line-height: var(--lh-tight); margin: 0; text-wrap: balance; }
+h1 { font-size: var(--fs-h1); letter-spacing: -0.015em; }
+h2 { font-size: var(--fs-h2); letter-spacing: -0.01em; }
+h3 { font-size: var(--fs-h3); }
+p, ul, ol { margin: 0; }
+p { text-wrap: pretty; }
+strong { font-weight: 500; }
+img { display: block; max-width: 100%; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.caption {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.lead { font-size: var(--fs-lead); line-height: 1.35; }
+.muted { color: var(--text-muted); }
+
+a { color: var(--link); text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
+a:hover { text-decoration-color: currentColor; }
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cta::after {
+  content: "";
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+  background: var(--cta-arrow) center / contain no-repeat;
+  transition: transform 0.15s ease;
+}
+.cta:hover::after { transform: translateX(0.2em); }
+
+.checklist { list-style: none; padding: 0; display: grid; gap: var(--space-3); }
+.checklist li { position: relative; padding-left: 1.75em; }
+.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 1.05em;
+  height: 1.05em;
+  border: 1.5px solid currentColor;
+  border-radius: 0.2em;
+  opacity: 0.75;
+}
+
+.bullets { padding-left: 1.1em; display: grid; gap: var(--space-2); }
+.bullets li::marker { color: var(--text-muted); }
+
+.logo { display: block; height: auto; }
+
+@page { size: letter; margin: 0; }
+
+@media print {
+  :root { --radius: 0; --radius-sm: 0; }
+  :root { --fs-small: 1rem; --fs-body: 1.15rem; }
+  html { font-size: 11.6px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cta::after { transition: none; }
+  a { text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); }
+}
