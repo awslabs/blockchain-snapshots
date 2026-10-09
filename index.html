@@ -1,168 +1,471 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Blockchain Snapshots on AWS</title>
-  <meta name="description" content="Skip the initial sync: bootstrap your node from a pre-synced snapshot in Amazon S3." />
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blockchain Snapshots on AWS</title>
+<meta name="description" content="Skip the initial sync: bootstrap your node from a pre-synced snapshot in Amazon S3.">
+<link rel="stylesheet" href="brand/aws-brand.css">
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
-  <nav class="topbar" aria-label="Primary">
-    <div class="topbar-inner">
-      <a class="brand" href="/" aria-label="Blockchain Snapshots on AWS — home">Blockchain Snapshots</a>
-      <ul class="nav-links">
-        <li><a href="https://aws.amazon.com/web3/">Web3 on AWS</a></li>
-        <li><a href="https://aws.amazon.com/blogs/web3/">Blog</a></li>
-        <li><a href="https://aws-samples.github.io/aws-blockchain-node-runners/">Node Runners</a></li>
-        <li><a href="/" aria-current="page">Snapshots</a></li>
-        <li><a href="https://registry.opendata.aws/aws-public-blockchain/">Datasets</a></li>
-        <li><a href="https://startups.aws.com/lp/web3">Startups</a></li>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="topbar theme-dark" aria-label="Primary">
+  <div class="wrap topbar__inner">
+    <a class="topbar__home" href="#top" aria-label="Blockchain Snapshots on AWS, home">
+      <img class="logo topbar__logo" src="brand/logo/AWS_logo_RGB_1c_White.svg" alt="">
+      <span class="topbar__name">Blockchain Snapshots</span>
+    </a>
+    <ul class="topbar__links">
+      <li><a href="#get-started">Get started</a></li>
+      <li><a href="#snapshots">Snapshots</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#cli">CLI</a></li>
+      <li><a class="topbar__gh" href="https://github.com/awslabs/blockchain-snapshots"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero theme-dark" id="top">
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow">Open source · awslabs · Apache-2.0</p>
+      <h1>Skip the initial sync</h1>
+      <p class="hero__lead">Bootstrap your node from a pre-synced snapshot in Amazon S3. Each snapshot is a copy of a node database from the network’s upstream publisher, refreshed on their schedule.</p>
+      <ul class="cta-row">
+        <li><a class="cta" href="#get-started">Get started</a></li>
+        <li><a class="cta" href="#snapshots">Browse snapshots</a></li>
+        <li><a class="cta" href="https://github.com/awslabs/blockchain-snapshots">View on GitHub</a></li>
       </ul>
-    </div>
-  </nav>
-
-  <main>
-    <header class="site-header">
-      <h1>Blockchain Snapshots on AWS</h1>
-      <a class="repo-link" href="https://github.com/awslabs/blockchain-snapshots">
-        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-          <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/>
-        </svg>
-        <span>GitHub</span>
-      </a>
-      <p class="sub">Skip the initial sync: bootstrap your node from a pre-synced snapshot in Amazon S3.</p>
-    </header>
-
-    <section class="hero" aria-label="Overview">
-      <p>
-        Each snapshot is a copy of a node database from the network's upstream
-        publisher, refreshed on their schedule. Download one to an EC2 instance in
-        the same Region and start your node from it. There is no charge for the
-        snapshots. Standard charges apply for the instance and storage you use.
-      </p>
       <dl class="facts">
         <div><dt>Chains</dt><dd id="fact-chains">Ethereum, Solana</dd></div>
-        <div><dt>Regions</dt><dd id="fact-regions">US East (N. Virginia), Europe (Ireland), Asia Pacific (Tokyo)</dd></div>
+        <div><dt>Clients</dt><dd id="fact-clients">Agave, Geth, Nethermind, Reth</dd></div>
+        <div><dt>Regions</dt><dd id="fact-regions" data-region-list><span>us-east-1</span>, <span>eu-west-1</span>, <span>ap-northeast-1</span></dd></div>
+        <div><dt>Price</dt><dd>No charge for snapshots</dd></div>
       </dl>
-      <div class="cta">
-        <a class="button primary" href="#get-started">Get started</a>
-        <a class="button" href="#snapshots">Browse snapshots</a>
+    </div>
+    <figure class="terminal" aria-label="Example snapshot.sh session">
+      <div class="terminal__bar">
+        <span class="terminal__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="terminal__title">~/blockchain-snapshots/dist</span>
       </div>
-    </section>
+<pre class="terminal__body"><code><span class="t-prompt">$ </span><span class="t-cmd">./snapshot.sh --list</span>
+<span class="t-out" id="term-list">ethereum-hoodi-geth          tar-zstd-stream-v1         3770000
+ethereum-mainnet-geth        tar-zstd-seekable-v1       26139552
+ethereum-mainnet-nethermind  tar-zstd-seekable-v1       26139552
+ethereum-mainnet-reth        tar-zstd-seekable-v1       26149553
+solana-mainnet-agave         archive-set-v1             454662635</span>
+<span class="t-prompt">$ </span><span class="t-cmd" id="term-cmd">./snapshot.sh --snapshot ethereum-mainnet-reth --out /data/ethereum-mainnet-reth</span><span class="t-cursor" aria-hidden="true"></span></code></pre>
+      <figcaption class="caption terminal__caption" id="term-caption">Example output</figcaption>
+    </figure>
+  </div>
+</header>
 
-    <section id="get-started" class="get-started" aria-labelledby="get-started-title">
-      <h2 id="get-started-title">Get started</h2>
-      <p class="note">
-        Snapshots are only reachable through an Amazon S3 gateway VPC endpoint, so you
-        download them from an EC2 instance in the same Region. A laptop or a browser
-        won't work.
-      </p>
-      <ol class="steps">
-        <li>
-          <h3>Use an instance</h3>
-          <p>
-            Run these steps on an EC2 instance in
-            <span data-region-codes>us-east-1, eu-west-1, or ap-northeast-1</span>,
-            running <strong>Amazon Linux 2023</strong> or <strong>Ubuntu 24.04</strong>.
-            Its VPC needs an S3 gateway endpoint, and its instance profile needs
-            <code>s3:GetObject</code> and <code>s3:ListBucket</code>.
-          </p>
-          <p>
-            Storage can be either <strong>local NVMe</strong> (instance types like
-            i4i or i8g — fastest) or an <strong>EBS volume</strong> large enough for
-            the extracted snapshot. Step 3 covers both.
-          </p>
-        </li>
-        <li>
-          <h3>Get the tools and dependencies</h3>
-          <p>Setup installs:</p>
-          <ul>
-            <li>AWS CLI v2</li>
-            <li>Python 3 with <code>boto3</code> and <code>zstandard</code></li>
-            <li><code>zstd</code>, <code>tar</code>, <code>curl</code>, and <code>unzip</code></li>
-            <li>mountpoint-s3 and FUSE when the instance supports them; otherwise downloads use S3 directly</li>
+<figure class="band" aria-hidden="true">
+  <img src="assets/band-innovation-acceleration.jpg" alt="">
+</figure>
+
+<main id="main">
+
+<section class="section why" aria-labelledby="why-title">
+  <div class="wrap">
+    <div class="section__head">
+      <p class="eyebrow">Why snapshots</p>
+      <h2 id="why-title">Start from current state, not from genesis</h2>
+      <p class="lead">Pick a snapshot ID, point it at a volume, and run one command. The catalog decides where the data lives and how it’s delivered.</p>
+    </div>
+    <ul class="features">
+      <li class="feature">
+        <h3>Latest, every time</h3>
+        <p>Select a stable ID like <code>ethereum-mainnet-geth</code>. <code>snapshot.sh</code> resolves the newest catalog entry when you run it, so there’s no block, script, or extraction method to choose.</p>
+      </li>
+      <li class="feature">
+        <h3>Parallel extraction</h3>
+        <p>Seekable snapshots decode independent zstd frames in parallel and write the filesystem tree directly. Local NVMe gets O_DIRECT writes; EBS gets buffered writes.</p>
+      </li>
+      <li class="feature">
+        <h3>Checks before it writes</h3>
+        <p>Credentials, bucket access, artifact size, output safety, dependencies, and free space are validated before any data is written.</p>
+      </li>
+      <li class="feature">
+        <h3>Container-aware</h3>
+        <p>Worker count follows CPU affinity, cgroup CPU quota, and memory headroom, up to 96. Runs in Docker, Amazon ECS, and Kubernetes.</p>
+      </li>
+      <li class="feature">
+        <h3>In-Region, through your VPC</h3>
+        <p>Snapshots are reachable only through an Amazon S3 gateway VPC endpoint, from an EC2 instance in the same Region.</p>
+      </li>
+      <li class="feature">
+        <h3>No charge for snapshots</h3>
+        <p>Standard charges apply for the instance, EBS volumes, and other AWS resources you use.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="section start" id="get-started" aria-labelledby="start-title">
+  <div class="wrap">
+    <div class="section__head">
+      <p class="eyebrow">Get started</p>
+      <h2 id="start-title">From instance to node data in four steps</h2>
+    </div>
+    <p class="callout"><strong>Run this on EC2, not your laptop.</strong> Snapshots are only reachable through an Amazon S3 gateway VPC endpoint, so you download them from an EC2 instance in the same Region. A laptop or a browser won’t work.</p>
+
+    <ol class="steps">
+      <li class="step">
+        <div class="step__head"><span class="step__n">01</span><h3>Use an instance</h3></div>
+        <div class="step__body">
+          <p>Run these steps on an EC2 instance in <span data-region-codes>us-east-1, eu-west-1, or ap-northeast-1</span>, running <strong>Amazon Linux 2023</strong> or <strong>Ubuntu 24.04</strong>. Its VPC needs an S3 gateway endpoint, and its instance profile needs <code>s3:GetObject</code> and <code>s3:ListBucket</code>.</p>
+          <ul class="checks">
+            <li>EC2 instance in an active Region</li>
+            <li>S3 gateway VPC endpoint</li>
+            <li>Instance profile with read access</li>
+            <li>Local NVMe or an EBS volume sized for the extracted snapshot</li>
           </ul>
-          <p>First get the repository. Amazon Linux 2023:</p>
-          <div class="codeblock"><pre><code>sudo dnf install -y git
-cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
-cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
-          <p>Ubuntu 24.04:</p>
-          <div class="codeblock"><pre><code>sudo apt-get update &amp;&amp; sudo apt-get install -y git
-cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
-cd blockchain-snapshots/dist</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
-          <p>Then run setup once:</p>
-          <div class="codeblock"><pre><code>./snapshot.sh --setup</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
-          <p class="note">
-            Setup may prompt for <code>sudo</code>. Snapshot download commands do
-            not use <code>sudo</code>; run them as the account that should own the
-            data. AWS Blockchain Node Runners uses <code>bcuser</code>.
-          </p>
-        </li>
-        <li>
-          <h3>Set up storage</h3>
-          <p>
-            Extract to a dedicated directory on a volume with room for the full
-            snapshot. Pick the one that matches your instance.
-          </p>
-          <p><strong>Local NVMe</strong> — join the instance's NVMe drives into one volume at <code>/data</code>:</p>
-          <div class="codeblock"><pre><code>sudo bash setup-storage.sh</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
-          <p><strong>EBS volume</strong> — no RAID needed. If it's an extra volume (here <code>/dev/nvme1n1</code>), format and mount it once; if you're using the root volume, just make the directory:</p>
-          <div class="codeblock"><pre><code>sudo mkfs.xfs -f /dev/nvme1n1          # skip if already formatted
-sudo mkdir -p /data &amp;&amp; sudo mount /dev/nvme1n1 /data
-sudo chown "$(id -u):$(id -g)" /data</code></pre><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
-          <p class="note">
-            On EBS the extractor writes buffered automatically; on local NVMe it
-            uses O_DIRECT. Either way the result is identical — size the volume for
-            the snapshot's extracted size, not its download size.
-          </p>
-        </li>
-        <li>
-          <h3>Download a snapshot</h3>
-          <p>
-            Pick a snapshot below and run its command from the <code>dist</code>
-            folder. <code>snapshot.sh</code> resolves the latest catalog entry at
-            execution time, checks storage, and selects the delivery method from catalog data. Each snapshot writes
-            to its own folder under <code>/data</code>.
-          </p>
-          <p>
-            For archive-set snapshots such as Solana, the files remain compressed
-            because the node unpacks them itself. Start Agave with
-            <code>--snapshots</code> pointing at that folder and
-            <code>--no-snapshot-fetch</code>.
-          </p>
-        </li>
-      </ol>
-    </section>
+          <details class="disclosure">
+            <summary>Example instance profile policy</summary>
+            <div class="code">
+              <div class="code__bar"><span class="caption">json</span><button type="button" class="copy">Copy</button></div>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::blockchain-snapshots-us-east-1",
+        "arn:aws:s3:::blockchain-snapshots-us-east-1/*",
+        "arn:aws:s3:::blockchain-snapshots-eu-west-1",
+        "arn:aws:s3:::blockchain-snapshots-eu-west-1/*",
+        "arn:aws:s3:::blockchain-snapshots-ap-northeast-1",
+        "arn:aws:s3:::blockchain-snapshots-ap-northeast-1/*"
+      ]
+    }
+  ]
+}</code></pre>
+            </div>
+            <p class="muted small">Scope the resources to the Region you use. Bucket names come from each Region’s catalog.</p>
+          </details>
+        </div>
+      </li>
 
-    <section id="snapshots" class="snapshots" aria-labelledby="snapshots-title">
-      <h2 id="snapshots-title">Available snapshots</h2>
+      <li class="step">
+        <div class="step__head"><span class="step__n">02</span><h3>Get the tools and dependencies</h3></div>
+        <div class="step__body">
+          <p>Clone the repository, then run setup once. Setup installs AWS CLI v2; Python 3 with <code>boto3</code> and <code>zstandard</code>; <code>zstd</code>, <code>tar</code>, <code>curl</code>, and <code>unzip</code>; and mountpoint-s3 with FUSE when the instance supports them. Otherwise, downloads use S3 directly.</p>
+          <div class="tabs" data-tabs>
+            <div class="tabs__list" role="tablist" aria-label="Operating system">
+              <button type="button" role="tab" id="tab-al2023" aria-controls="panel-al2023" aria-selected="true">Amazon Linux 2023</button>
+              <button type="button" role="tab" id="tab-ubuntu" aria-controls="panel-ubuntu" aria-selected="false">Ubuntu 24.04</button>
+            </div>
+            <div class="tabs__panel" role="tabpanel" id="panel-al2023" aria-labelledby="tab-al2023">
+              <div class="code">
+                <div class="code__bar"><span class="caption">bash</span><button type="button" class="copy">Copy</button></div>
+<pre><code>sudo dnf install -y git
+cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
+cd blockchain-snapshots/dist</code></pre>
+              </div>
+            </div>
+            <div class="tabs__panel" role="tabpanel" id="panel-ubuntu" aria-labelledby="tab-ubuntu">
+              <div class="code">
+                <div class="code__bar"><span class="caption">bash</span><button type="button" class="copy">Copy</button></div>
+<pre><code>sudo apt-get update &amp;&amp; sudo apt-get install -y git
+cd ~ &amp;&amp; git clone https://github.com/awslabs/blockchain-snapshots.git
+cd blockchain-snapshots/dist</code></pre>
+              </div>
+            </div>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span class="caption">bash · run once</span><button type="button" class="copy">Copy</button></div>
+<pre><code>./snapshot.sh --setup</code></pre>
+          </div>
+          <p class="note">Setup may prompt for <code>sudo</code>. Snapshot download commands don’t use <code>sudo</code>; run them as the account that should own the data. AWS Blockchain Node Runners uses <code>bcuser</code>.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step__head"><span class="step__n">03</span><h3>Set up storage</h3></div>
+        <div class="step__body">
+          <p>Extract to a dedicated directory on a volume with room for the full snapshot. Pick the one that matches your instance.</p>
+          <div class="tabs" data-tabs>
+            <div class="tabs__list" role="tablist" aria-label="Storage type">
+              <button type="button" role="tab" id="tab-nvme" aria-controls="panel-nvme" aria-selected="true">Local NVMe</button>
+              <button type="button" role="tab" id="tab-ebs" aria-controls="panel-ebs" aria-selected="false">EBS volume</button>
+            </div>
+            <div class="tabs__panel" role="tabpanel" id="panel-nvme" aria-labelledby="tab-nvme">
+              <p class="small">Join the instance’s NVMe drives into one volume at <code>/data</code>. Instance types like i4i or i8g are the fastest option.</p>
+              <div class="code">
+                <div class="code__bar"><span class="caption">bash</span><button type="button" class="copy">Copy</button></div>
+<pre><code>sudo bash setup-storage.sh</code></pre>
+              </div>
+            </div>
+            <div class="tabs__panel" role="tabpanel" id="panel-ebs" aria-labelledby="tab-ebs">
+              <p class="small">No RAID needed. If it’s an extra volume (here <code>/dev/nvme1n1</code>), format and mount it once. If you’re using the root volume, just make the directory.</p>
+              <div class="code">
+                <div class="code__bar"><span class="caption">bash</span><button type="button" class="copy">Copy</button></div>
+<pre><code>sudo mkfs.xfs -f /dev/nvme1n1          # skip if already formatted
+sudo mkdir -p /data &amp;&amp; sudo mount /dev/nvme1n1 /data
+sudo chown "$(id -u):$(id -g)" /data</code></pre>
+              </div>
+            </div>
+          </div>
+          <p class="note">On EBS the extractor writes buffered automatically; on local NVMe it uses O_DIRECT. Either way the result is identical. Size the volume for the snapshot’s extracted size, not its download size.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step__head"><span class="step__n">04</span><h3>Download a snapshot</h3></div>
+        <div class="step__body">
+          <p>Pick a snapshot below and run its command from the <code>dist</code> folder. <code>snapshot.sh</code> resolves the latest catalog entry at execution time, checks storage, and selects the delivery method from catalog data. Each snapshot writes to its own folder under <code>/data</code>.</p>
+          <div class="code">
+            <div class="code__bar"><span class="caption">bash</span><button type="button" class="copy">Copy</button></div>
+<pre><code>./snapshot.sh --snapshot ethereum-mainnet-geth --out /data/ethereum-mainnet-geth</code></pre>
+          </div>
+          <p class="note">For archive-set snapshots such as Solana, the files stay compressed because the node unpacks them itself. Start Agave with <code>--snapshots</code> pointing at that folder and <code>--no-snapshot-fetch</code>.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="section catalog" id="snapshots" aria-labelledby="catalog-title">
+  <div class="wrap">
+    <div class="catalog__head">
+      <div class="section__head">
+        <p class="eyebrow">Live catalog</p>
+        <h2 id="catalog-title">Available snapshots</h2>
+      </div>
       <div class="filters">
-        <label>
-          Region
-          <select id="region-select"><option value="">Loading…</option></select>
-        </label>
-        <label>
-          Blockchain
-          <select id="chain-select"><option value="">All</option></select>
+        <div class="segmented" role="radiogroup" aria-label="Region" id="region-group"></div>
+        <label class="select">
+          <span class="caption">Blockchain</span>
+          <select id="chain-select"><option value="">All blockchains</option></select>
         </label>
       </div>
+    </div>
+    <p class="status caption"><span id="status" role="status">Loading catalogs…</span><span id="freshness"></span> <button type="button" class="refresh" id="refresh-now">Refresh now</button></p>
+    <div id="results" class="results" aria-live="polite">
+      <noscript><p class="empty">Turn on JavaScript to browse the live catalog, or run <code>./snapshot.sh --list</code> on your instance.</p></noscript>
+    </div>
+  </div>
+</section>
 
-      <p id="status" class="status" role="status"></p>
+<section class="section how theme-dark" id="how-it-works" aria-labelledby="how-title">
+  <div class="wrap">
+    <div class="how__head">
+      <div class="section__head">
+        <p class="eyebrow">How it works</p>
+        <h2 id="how-title">One entrypoint, driven by catalog data</h2>
+        <p class="lead">The tooling has no hardcoded snapshot list. Adding a snapshot that uses an existing delivery protocol is a catalog change, not a tool release.</p>
+      </div>
+      <figure class="how__art"><img src="assets/feature-end-to-end.jpg" alt=""></figure>
+    </div>
 
-      <div id="results" class="results" aria-live="polite"></div>
-    </section>
-  </main>
+    <ol class="flow">
+      <li class="flow__step">
+        <span class="flow__n">01</span>
+        <h3>Registry</h3>
+        <p>Reads the active-region registry, <code>config/regions.json</code>, published with this page.</p>
+      </li>
+      <li class="flow__step">
+        <span class="flow__n">02</span>
+        <h3>Catalog</h3>
+        <p>Fetches the Region’s current <code>catalog.json</code>: CloudFront first, with an S3 fallback for private subnets.</p>
+      </li>
+      <li class="flow__step">
+        <span class="flow__n">03</span>
+        <h3>Resolve</h3>
+        <p>Maps the stable ID to the latest catalog entry at execution time. No block, slot, or version is a user choice.</p>
+      </li>
+      <li class="flow__step">
+        <span class="flow__n">04</span>
+        <h3>Validate</h3>
+        <p>Checks credentials, bucket access, artifact size, output safety, dependencies, and available space.</p>
+      </li>
+      <li class="flow__step">
+        <span class="flow__n">05</span>
+        <h3>Deliver</h3>
+        <p>Calls the handler for the protocol the catalog declares. An unknown protocol fails clearly and asks you to update the tooling.</p>
+      </li>
+    </ol>
 
-  <footer class="disclaimer">
-    <p>
-      Provided "AS IS" without warranty. Snapshot data is mirrored from
-      third-party sources; verify integrity before use. No availability or
-      freshness guarantee. This is not an AWS service and carries no SLA.
-      See <a href="https://github.com/awslabs/blockchain-snapshots/blob/main/LICENSE">LICENSE</a>.
-    </p>
-  </footer>
+    <div class="protocols">
+      <h3 class="protocols__title">Delivery protocols</h3>
+      <table class="ptable">
+        <thead>
+          <tr><th scope="col">Protocol</th><th scope="col">Behavior</th><th scope="col">Free space checked against</th><th scope="col">Used by</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><code>tar-zstd-seekable-v1</code></th>
+            <td>Fetches the manifest, decodes independent zstd frames in parallel, and writes the filesystem tree</td>
+            <td>The manifest’s exact uncompressed size</td>
+            <td data-protocol-users="tar-zstd-seekable-v1">Ethereum Mainnet (Geth, Nethermind, Reth)</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>tar-zstd-stream-v1</code></th>
+            <td>Streams the archive through <code>zstd | tar</code> and writes the filesystem tree</td>
+            <td>A conservative estimate of 2× the compressed size</td>
+            <td data-protocol-users="tar-zstd-stream-v1">Ethereum Hoodi (Geth)</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>archive-set-v1</code></th>
+            <td>Keeps the named full, incremental, and genesis archives for the node to unpack</td>
+            <td>Known artifact sizes plus a 5% margin</td>
+            <td data-protocol-users="archive-set-v1">Solana Mainnet (Agave)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
-  <script src="app.js"></script>
+<section class="section cli" id="cli" aria-labelledby="cli-title">
+  <div class="wrap">
+    <div class="section__head">
+      <p class="eyebrow">Reference</p>
+      <h2 id="cli-title">snapshot.sh</h2>
+      <p class="lead">One command for setup, discovery, and download. Logs go to stderr, so <code>--json</code> output pipes cleanly.</p>
+    </div>
+
+    <div class="cli__grid">
+      <div class="cli__usage">
+        <div class="code code--plain">
+          <div class="code__bar"><span class="caption">usage</span></div>
+<pre><code>snapshot.sh --setup
+snapshot.sh --snapshot ID [options]
+snapshot.sh --chain CHAIN [--network NETWORK] [--client CLIENT] [options]
+snapshot.sh --list [--region REGION] [--json]</code></pre>
+        </div>
+        <h3 class="cli__sub">Automate it</h3>
+        <div class="code">
+          <div class="code__bar"><span class="caption">bash</span><button type="button" class="copy">Copy</button></div>
+<pre><code># machine-readable result on stdout, progress on stderr
+./snapshot.sh --snapshot ethereum-mainnet-reth --json | jq -r .output_dir
+
+# discover IDs, or narrow with selectors
+./snapshot.sh --list --region us-east-1
+./snapshot.sh --chain solana --network mainnet</code></pre>
+        </div>
+        <p class="note">A partial selection that matches more than one entry lists the candidates instead of guessing. <code>DEBUG=1</code> traces shell commands, keeps the per-run work directory, and logs each extraction group.</p>
+      </div>
+
+      <div class="cli__opts">
+        <table class="otable">
+          <caption class="caption">Options</caption>
+          <tbody>
+            <tr><th scope="row"><code>--snapshot ID</code></th><td>Stable catalog ID, such as <code>ethereum-mainnet-geth</code></td></tr>
+            <tr><th scope="row"><code>--chain</code> <code>--network</code> <code>--client</code></th><td>Convenience selectors; must resolve to one entry</td></tr>
+            <tr><th scope="row"><code>--list</code></th><td>List available snapshots in this Region and exit</td></tr>
+            <tr><th scope="row"><code>--region REGION</code></th><td>Active Region. Defaults to <code>AWS_REGION</code>/<code>AWS_DEFAULT_REGION</code>, then EC2 IMDSv2</td></tr>
+            <tr><th scope="row"><code>--out DIR</code></th><td>Output directory. Default: <code>/data/&lt;snapshot-id&gt;</code></td></tr>
+            <tr><th scope="row"><code>--source MODE</code></th><td><code>auto</code> | <code>mount</code> | <code>s3</code>. Auto uses mountpoint-s3 when FUSE is usable, otherwise direct S3 reads</td></tr>
+            <tr><th scope="row"><code>--workers N</code></th><td>Parallel workers; <code>0</code> is container-aware auto</td></tr>
+            <tr><th scope="row"><code>--o-direct MODE</code></th><td><code>auto</code> | <code>on</code> | <code>off</code>. Auto enables O_DIRECT only on local NVMe, after a test write</td></tr>
+            <tr><th scope="row"><code>--force</code></th><td>Clear a non-empty output for filesystem delivery</td></tr>
+            <tr><th scope="row"><code>--json</code></th><td>Machine-readable final result</td></tr>
+            <tr><th scope="row"><code>--registry URL</code></th><td>Active-region registry override, for test registries</td></tr>
+          </tbody>
+        </table>
+        <table class="otable">
+          <caption class="caption">Environment</caption>
+          <tbody>
+            <tr><th scope="row"><code>REGISTRY_URL</code> <code>SOURCE</code> <code>WORKERS</code> <code>ODIRECT</code></th><td>Same as the matching options</td></tr>
+            <tr><th scope="row"><code>MS3_GBPS</code></th><td>mountpoint-s3 maximum throughput in Gbps. Default: <code>25</code></td></tr>
+            <tr><th scope="row"><code>DROP_CACHES=1</code></th><td>Drop the page cache before extraction (needs root)</td></tr>
+            <tr><th scope="row"><code>DEBUG=1</code></th><td>Trace commands and keep the work directory</td></tr>
+          </tbody>
+        </table>
+        <table class="otable">
+          <caption class="caption"><code>--json</code> result fields</caption>
+          <tbody>
+            <tr><th scope="row"><code>status</code></th><td><code>success</code></td></tr>
+            <tr><th scope="row"><code>snapshot_id</code> <code>blockchain</code> <code>network</code> <code>client</code></th><td>What was resolved</td></tr>
+            <tr><th scope="row"><code>version</code></th><td>Resolved block or slot. <code>block</code> remains as an alias during the compatibility window</td></tr>
+            <tr><th scope="row"><code>delivery_protocol</code> <code>method</code></th><td>Protocol from the catalog, and the read path used: <code>mount</code>, <code>s3</code>, or <code>archive-set</code></td></tr>
+            <tr><th scope="row"><code>region</code> <code>output_dir</code> <code>size_bytes</code> <code>duration_seconds</code></th><td>Where it ran, where the data is, and how long it took</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section run" aria-labelledby="run-title">
+  <div class="wrap">
+    <div class="section__head">
+      <p class="eyebrow">Where it runs</p>
+      <h2 id="run-title">EC2, containers, and Node Runners</h2>
+    </div>
+    <div class="run__grid">
+      <article class="run__card">
+        <h3>Hosts</h3>
+        <p>Amazon Linux 2023 and Ubuntu 22.04 or 24.04, on x86_64 and arm64. Run setup once, separately from the download.</p>
+      </article>
+      <article class="run__card">
+        <h3>Containers</h3>
+        <p>Bake the dependencies into the image instead of running setup. Pass credentials through an ECS task role, EKS Pod Identity or IRSA, environment credentials, or reachable instance metadata. <code>--source s3</code> needs no FUSE or extra container capabilities.</p>
+      </article>
+      <article class="run__card">
+        <h3>AWS Blockchain Node Runners</h3>
+        <p>Node Runners uses <code>bcuser</code> (UID/GID 1002). Run setup and storage preparation in its root bootstrap, then run the download as <code>bcuser</code> so the node user owns the files.</p>
+        <a class="cta" href="https://aws-samples.github.io/aws-blockchain-node-runners/">Explore Node Runners</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section trust theme-dark" aria-labelledby="trust-title">
+  <div class="wrap trust__grid">
+    <div>
+      <p class="eyebrow">Integrity</p>
+      <h2 id="trust-title" class="trust__quote">The network is the final arbiter of correctness.</h2>
+    </div>
+    <div class="trust__body">
+      <p>A node restored from a snapshot must validate against its network peers. The resolver validates catalog shape and exact S3 URIs, checks artifact size against the catalog before delivery, and checks seekable artifacts against their download manifest.</p>
+      <p class="muted">Snapshot data is mirrored from third-party blockchain foundations and teams. Availability doesn’t constitute endorsement. No availability, freshness, or correctness guarantee is provided, and this is not an AWS service or SLA.</p>
+      <a class="cta" href="https://github.com/awslabs/blockchain-snapshots/blob/main/SECURITY.md">Report a security issue</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer theme-dark">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <img class="logo footer__logo" src="brand/logo/AWS_logo_RGB_1c_White.svg" alt="AWS">
+        <p class="muted">Provided “AS IS” without warranty. Snapshot data is mirrored from third-party sources; verify integrity before use. No availability or freshness guarantee. This is not an AWS service and carries no SLA.</p>
+      </div>
+      <div>
+        <h3 class="caption">Project</h3>
+        <ul>
+          <li><a href="https://github.com/awslabs/blockchain-snapshots">GitHub repository</a></li>
+          <li><a href="https://github.com/awslabs/blockchain-snapshots/blob/main/dist/README.md">Tooling reference</a></li>
+          <li><a href="https://github.com/awslabs/blockchain-snapshots/blob/main/LICENSE">License (Apache-2.0)</a></li>
+          <li><a href="https://github.com/awslabs/blockchain-snapshots/blob/main/SECURITY.md">Security</a></li>
+          <li><a href="https://github.com/awslabs/blockchain-snapshots/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="caption">Web3 on AWS</h3>
+        <ul>
+          <li><a href="https://aws.amazon.com/web3/">Web3 on AWS</a></li>
+          <li><a href="https://aws.amazon.com/blogs/web3/">AWS Web3 Blog</a></li>
+          <li><a href="https://aws-samples.github.io/aws-blockchain-node-runners/">AWS Blockchain Node Runners</a></li>
+          <li><a href="https://registry.opendata.aws/aws-public-blockchain/">AWS Public Blockchain Data</a></li>
+          <li><a href="https://startups.aws.com/lp/web3">AWS Activate for Web3 Startups</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="caption footer__legal">© 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
 </body>
 </html>
