@@ -16,8 +16,7 @@
 <nav class="topbar theme-dark" aria-label="Primary">
   <div class="wrap topbar__inner">
     <a class="topbar__home" href="#top" aria-label="Blockchain Snapshots on AWS, home">
-      <img class="logo topbar__logo" src="brand/logo/AWS_logo_RGB_1c_White.svg" alt="">
-      <span class="topbar__name">Blockchain Snapshots</span>
+      <span class="topbar__name">Blockchain Snapshots on AWS</span>
     </a>
     <ul class="topbar__links">
       <li><a href="#get-started">Get started</a></li>
@@ -58,7 +57,7 @@ ethereum-mainnet-geth        tar-zstd-seekable-v1       26139552
 ethereum-mainnet-nethermind  tar-zstd-seekable-v1       26139552
 ethereum-mainnet-reth        tar-zstd-seekable-v1       26149553
 solana-mainnet-agave         archive-set-v1             454662635</span>
-<span class="t-prompt">$ </span><span class="t-cmd" id="term-cmd">./snapshot.sh --snapshot ethereum-mainnet-reth --out /data/ethereum-mainnet-reth</span><span class="t-cursor" aria-hidden="true"></span></code></pre>
+<span class="t-prompt">$ </span><span class="t-cmd" id="term-cmd">./snapshot.sh --snapshot ethereum-mainnet-geth --out /data/chaindata</span><span class="t-cursor" aria-hidden="true"></span></code></pre>
       <figcaption class="caption terminal__caption" id="term-caption">Example output</figcaption>
     </figure>
   </div>
@@ -73,9 +72,8 @@ solana-mainnet-agave         archive-set-v1             454662635</span>
 <section class="section why" aria-labelledby="why-title">
   <div class="wrap">
     <div class="section__head">
-      <p class="eyebrow">Why snapshots</p>
       <h2 id="why-title">Start from current state, not from genesis</h2>
-      <p class="lead">Pick a snapshot ID, point it at a volume, and run one command. The catalog decides where the data lives and how it’s delivered.</p>
+      <p class="lead">Pick a snapshot ID, point it at a volume, and run one command.</p>
     </div>
     <ul class="features">
       <li class="feature">

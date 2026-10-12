@@ -45,8 +45,7 @@ code {
 .topbar { position: sticky; top: 0; z-index: 20; background: rgb(15 20 26 / 0.94); backdrop-filter: blur(10px); border-bottom: 1px solid rgb(255 255 255 / 0.08); }
 .topbar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); min-height: var(--nav-h); }
 .topbar__home { display: flex; align-items: center; gap: 2.5rem; color: #fff; text-decoration: none; }
-.topbar__logo { width: 3.375rem; }
-.topbar__name { font-weight: 500; font-size: 1.0625rem; }
+.topbar__name { font-weight: 500; font-size: 1.0625rem; text-wrap: balance; }
 .topbar__links { list-style: none; padding: 0; margin: 0; display: flex; align-items: center; gap: var(--space-6); font-size: 0.9375rem; }
 .topbar__links a { color: var(--aws-gray-300); text-decoration: none; }
 .topbar__links a:hover { color: #fff; }
