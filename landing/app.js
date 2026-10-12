@@ -123,9 +123,9 @@ function normalize(s, region) {
 }
 
 // The page never decides the delivery method: snapshot.sh resolves the stable ID
-// again when it runs, so a long-open tab can't produce a stale command.
-function commandFor(s) {
-  const out = `/data/${s.id}`;
+// again when it runs, so a long-open tab can't produce a stale command. Cards keep
+// the default /data/<snapshot-id> so two snapshots never share a folder.
+function commandFor(s, out = `/data/${s.id}`) {
   if (!shellSafe(s.id, out)) return null;
   return `./snapshot.sh --snapshot ${s.id} --out ${out}`;
 }
@@ -212,7 +212,7 @@ function renderTerminal() {
     .map((s) => `${s.id.padEnd(width)}  ${s.protocol.padEnd(25)}  ${s.version ?? '-'}`)
     .join('\n');
   const pick = first.rows.find((s) => s.protocol === 'tar-zstd-seekable-v1') || first.rows[0];
-  const cmd = commandFor(pick);
+  const cmd = commandFor(pick, '/data/chaindata');
   if (cmd) $('term-cmd').textContent = cmd;
   $('term-caption').dataset.region = first.code;
 }
@@ -258,17 +258,10 @@ function renderChainSelect() {
 function cardFor(s) {
   const proto = PROTOCOLS[s.protocol] || { pill: s.protocol, cls: '' };
   const versionLabel = VERSION_LABELS[s.blockchain] || 'Block';
-  const elsewhere = [...state.catalogs.values()]
-    .filter((c) => c.code !== s.region && c.rows.some((r) => r.id === s.id))
-    .map((c) => c.code);
   const extras = [];
   if (s.incremental && Number.isFinite(Number(s.incremental.slot))) {
     extras.push(`Includes an incremental snapshot to slot ${esc(Number(s.incremental.slot).toLocaleString('en-US'))} (${esc(fmtBytes(Number(s.incremental.size_bytes)))}).`);
   }
-  if (s.protocol === 'tar-zstd-stream-v1' && Number.isFinite(s.sizeBytes)) {
-    extras.push(`Needs about ${esc(fmtBytes(s.sizeBytes * 2))} free: 2× the download.`);
-  }
-  if (elsewhere.length) extras.push(`Also in ${joinList(elsewhere.map((c) => `<span>${esc(c)}</span>`), 'and')}.`);
   const cmd = commandFor(s);
   return `
     <article class="snap" data-id="${esc(s.id)}">
