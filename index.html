@@ -42,7 +42,7 @@
       <dl class="facts">
         <div><dt>Chains</dt><dd id="fact-chains">Ethereum, Solana</dd></div>
         <div><dt>Clients</dt><dd id="fact-clients">Agave, Geth, Nethermind, Reth</dd></div>
-        <div><dt>Regions</dt><dd id="fact-regions" data-region-list><span>us-east-1</span>, <span>eu-west-1</span>, <span>ap-northeast-1</span></dd></div>
+        <div><dt>Regions</dt><dd id="fact-regions" data-region-list><span>us-east-1</span>, <span>eu-west-1</span>, <span>ap-northeast-1</span>, <span>us-east-2</span></dd></div>
         <div><dt>Price</dt><dd>No charge for snapshots</dd></div>
       </dl>
     </div>
@@ -116,7 +116,7 @@ solana-mainnet-agave         archive-set-v1             454662635</span>
       <li class="step">
         <div class="step__head"><span class="step__n">01</span><h3>Use an instance</h3></div>
         <div class="step__body">
-          <p>Run these steps on an EC2 instance in <span data-region-codes>us-east-1, eu-west-1, or ap-northeast-1</span>, running <strong>Amazon Linux 2023</strong> or <strong>Ubuntu 24.04</strong>. Its VPC needs an S3 gateway endpoint, and its instance profile needs <code>s3:GetObject</code> and <code>s3:ListBucket</code>.</p>
+          <p>Run these steps on an EC2 instance in <span data-region-codes>us-east-1, eu-west-1, ap-northeast-1, or us-east-2</span>, running <strong>Amazon Linux 2023</strong> or <strong>Ubuntu 24.04</strong>. Its VPC needs an S3 gateway endpoint, and its instance profile needs <code>s3:GetObject</code> and <code>s3:ListBucket</code>.</p>
           <ul class="checks">
             <li>EC2 instance in an active Region</li>
             <li>S3 gateway VPC endpoint</li>
@@ -139,7 +139,9 @@ solana-mainnet-agave         archive-set-v1             454662635</span>
         "arn:aws:s3:::blockchain-snapshots-eu-west-1",
         "arn:aws:s3:::blockchain-snapshots-eu-west-1/*",
         "arn:aws:s3:::blockchain-snapshots-ap-northeast-1",
-        "arn:aws:s3:::blockchain-snapshots-ap-northeast-1/*"
+        "arn:aws:s3:::blockchain-snapshots-ap-northeast-1/*",
+        "arn:aws:s3:::blockchain-snapshots-us-east-2",
+        "arn:aws:s3:::blockchain-snapshots-us-east-2/*"
       ]
     }
   ]

@@ -17,6 +17,7 @@ const NETWORK_NAMES = { mainnet: 'Mainnet', hoodi: 'Hoodi' };
 const VERSION_LABELS = { solana: 'Slot' };
 const REGION_NAMES = {
   'us-east-1': 'N. Virginia',
+  'us-east-2': 'Ohio',
   'us-west-2': 'Oregon',
   'eu-west-1': 'Ireland',
   'eu-central-1': 'Frankfurt',
