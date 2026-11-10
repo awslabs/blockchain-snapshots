@@ -40,7 +40,7 @@
         <li><a class="cta" href="https://github.com/awslabs/blockchain-snapshots">View on GitHub</a></li>
       </ul>
       <dl class="facts">
-        <div><dt>Chains</dt><dd id="fact-chains">Ethereum, Solana</dd></div>
+        <div><dt>Chains</dt><dd id="fact-chains">Ethereum, Robinhood Chain, Solana</dd></div>
         <div><dt>Clients</dt><dd id="fact-clients">Agave, Geth, Nethermind, Reth</dd></div>
         <div><dt>Regions</dt><dd id="fact-regions" data-region-list><span>us-east-1</span>, <span>eu-west-1</span>, <span>ap-northeast-1</span>, <span>us-east-2</span></dd></div>
         <div><dt>Price</dt><dd>No charge for snapshots</dd></div>
@@ -303,7 +303,7 @@ sudo chown "$(id -u):$(id -g)" /data</code></pre>
             <th scope="row"><code>tar-zstd-seekable-v1</code></th>
             <td>Fetches the manifest, decodes independent zstd frames in parallel, and writes the filesystem tree</td>
             <td>The manifest’s exact uncompressed size</td>
-            <td data-protocol-users="tar-zstd-seekable-v1">Ethereum Mainnet (Geth, Nethermind, Reth)</td>
+            <td data-protocol-users="tar-zstd-seekable-v1">Ethereum Mainnet (Geth, Nethermind, Reth); Robinhood Chain Mainnet (Nitro)</td>
           </tr>
           <tr>
             <th scope="row"><code>tar-zstd-stream-v1</code></th>
