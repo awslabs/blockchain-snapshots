@@ -11,10 +11,11 @@ const REGISTRY_URLS = [
 
 // Allowlist of chains this page lists, keyed by the catalog's `blockchain` value.
 // Entries for any other chain are dropped as catalogs load; the catalogs are unchanged.
-const ENABLED_CHAINS = { ethereum: 'Ethereum', solana: 'Solana' };
-const CLIENT_NAMES = { geth: 'Geth', nethermind: 'Nethermind', reth: 'Reth', agave: 'Agave' };
+const ENABLED_CHAINS = { ethereum: 'Ethereum', robinhood: 'Robinhood Chain', solana: 'Solana' };
+const CLIENT_NAMES = { geth: 'Geth', nethermind: 'Nethermind', reth: 'Reth', agave: 'Agave', nitro: 'Nitro' };
 const NETWORK_NAMES = { mainnet: 'Mainnet', hoodi: 'Hoodi' };
-const VERSION_LABELS = { solana: 'Slot' };
+// Robinhood Chain's version is the upstream snapshot's date-hash, not a block.
+const VERSION_LABELS = { solana: 'Slot', robinhood: 'Snapshot' };
 const REGION_NAMES = {
   'us-east-1': 'N. Virginia',
   'us-east-2': 'Ohio',
